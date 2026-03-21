@@ -1,0 +1,366 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ─────────────────────────────────────────────────────────────────
+
+enum ExperienceLevel {
+  beginner
+  intermediate
+  advanced
+  elite
+}
+
+enum RunningGoal {
+  fitness
+  five_k
+  ten_k
+  half_marathon
+  marathon
+  ultra
+}
+
+enum DeviceType {
+  apple_watch
+  galaxy_watch
+  garmin
+  polar
+  fitbit
+  wahoo
+}
+
+enum DataSource {
+  apple_health
+  health_connect
+  garmin_connect
+  manual
+  app_native
+}
+
+enum SurfaceType {
+  road
+  trail
+  track
+  treadmill
+  mixed
+}
+
+enum PlanStatus {
+  active
+  completed
+  paused
+  abandoned
+}
+
+enum InsightType {
+  recovery_advice
+  performance_analysis
+  habit_pattern
+  injury_risk_alert
+  motivation
+  plan_adjustment
+}
+
+enum InsightPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum MatchStatus {
+  pending
+  accepted
+  declined
+  active
+  ended
+}
+
+enum RunningStyle {
+  social
+  competitive
+  meditative
+  mixed
+}
+
+// ─── User ──────────────────────────────────────────────────────────────────
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  passwordHash String
+  displayName String
+  avatarUrl   String?
+
+  // Physical
+  dateOfBirth DateTime?
+  gender      String?
+  heightCm    Int?
+  weightKg    Float?
+
+  // Running profile
+  experienceLevel         ExperienceLevel @default(beginner)
+  primaryGoal             RunningGoal     @default(fitness)
+  weeklyTargetKm          Float           @default(0)
+  preferredPaceMinSecPerKm Int            @default(300)
+  preferredPaceMaxSecPerKm Int            @default(480)
+
+  // Location
+  city        String?
+  countryCode String?
+  timezone    String  @default("UTC")
+
+  // Matching
+  matchingEnabled     Boolean @default(true)
+  preferGroupRuns     Boolean @default(false)
+  maxMatchDistanceKm  Float   @default(10)
+
+  // Relations
+  devices         ConnectedDevice[]
+  runs            Run[]
+  coachingPlans   CoachingPlan[]
+  insights        CoachingInsight[]
+  matchProfile    MatchProfile?
+  sentMatches     RunnerMatch[]     @relation("requester")
+  receivedMatches RunnerMatch[]     @relation("matched")
+  groups          GroupMember[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastActiveAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model ConnectedDevice {
+  id           String     @id @default(uuid())
+  userId       String
+  deviceType   DeviceType
+  deviceId     String
+  accessToken  String     // encrypted at app level
+  refreshToken String     // encrypted at app level
+  syncedAt     DateTime?
+  isActive     Boolean    @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, deviceType, deviceId])
+  @@index([userId])
+}
+
+// ─── Run ───────────────────────────────────────────────────────────────────
+
+model Run {
+  id     String @id @default(uuid())
+  userId String
+
+  // Timing
+  startedAt       DateTime
+  endedAt         DateTime
+  durationSeconds Int
+
+  // Distance & elevation
+  distanceMeters      Float
+  elevationGainMeters Float @default(0)
+  elevationLossMeters Float @default(0)
+
+  // Performance
+  avgPaceSecPerKm  Float
+  bestPaceSecPerKm Float?
+  avgHeartRate     Int?
+  maxHeartRate     Int?
+  avgCadenceSpm    Int?
+  avgPowerWatts    Float?
+
+  // Derived
+  vo2maxEstimate Float?
+  trainingLoad   Float  @default(0)
+  effortScore    Int    @default(5)
+
+  // Conditions
+  weatherTempC     Float?
+  weatherHumidity  Float?
+  weatherCondition String?
+  surfaceType      SurfaceType?
+
+  // Source & media
+  dataSource  DataSource
+  rawGpxUrl   String?
+  routeArtUrl String?
+
+  // Social
+  isPublic Boolean @default(false)
+  title    String?
+  notes    String?
+
+  // Relations
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  splits   RunSplit[]
+  insights CoachingInsight[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, startedAt(sort: Desc)])
+  @@index([startedAt])
+}
+
+model RunSplit {
+  id           String @id @default(uuid())
+  runId        String
+  splitNumber  Int
+  splitType    String @default("km")
+  durationSeconds Int
+  paceSecPerKm Float
+  heartRate    Int?
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, splitNumber])
+  @@index([runId])
+}
+
+// ─── Coaching ──────────────────────────────────────────────────────────────
+
+model CoachingPlan {
+  id          String     @id @default(uuid())
+  userId      String
+  title       String
+  description String
+  goal        String
+  startDate   DateTime
+  endDate     DateTime
+  status      PlanStatus @default(active)
+
+  // Plan content stored as JSON
+  weeks Json // PlanWeek[]
+
+  // Adaptation tracking
+  adherenceScore   Float @default(0)
+  lastAdaptedAt    DateTime?
+  adaptationCount  Int   @default(0)
+
+  generatedBy       String @default("claude")
+  modelVersion      String @default("claude-sonnet-4-5")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  insights CoachingInsight[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+}
+
+model CoachingInsight {
+  id     String @id @default(uuid())
+  userId String
+  runId  String?
+  planId String?
+
+  type        InsightType
+  content     String
+  priority    InsightPriority @default(medium)
+  metrics     Json            @default("{}")
+  actionItems Json            @default("[]") // string[]
+
+  readAt      DateTime?
+  dismissedAt DateTime?
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  run  Run?          @relation(fields: [runId], references: [id], onDelete: SetNull)
+  plan CoachingPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+}
+
+// ─── Matching ──────────────────────────────────────────────────────────────
+
+model MatchProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  // Computed characteristics
+  avgPaceSecPerKm   Float
+  avgWeeklyKm       Float
+  consistencyScore  Float @default(0)
+  preferredRunTime  String @default("morning")
+  preferredRunDays  Json   @default("[]") // number[]
+  preferredDistanceKm Float @default(5)
+
+  // Dimensions
+  runningStyle      RunningStyle @default(mixed)
+  communicationPref String       @default("results_only")
+
+  // Settings
+  lookingFor                String  @default("any")
+  maxPaceDifferenceSecPerKm Int     @default(60)
+  preferVirtualOnly         Boolean @default(false)
+  isLocationPublic          Boolean @default(true)
+
+  embeddingUpdatedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  updatedAt DateTime @updatedAt
+}
+
+model RunnerMatch {
+  id             String      @id @default(uuid())
+  requesterId    String
+  matchedUserId  String
+  matchType      String      @default("partner")
+  groupId        String?
+  similarityScore Float      @default(0)
+  compatibility   Json       @default("{}")
+  status         MatchStatus @default(pending)
+
+  requester   User @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  matchedUser User @relation("matched", fields: [matchedUserId], references: [id], onDelete: Cascade)
+
+  matchedAt   DateTime  @default(now())
+  respondedAt DateTime?
+  endedAt     DateTime?
+  endReason   String?
+
+  @@unique([requesterId, matchedUserId])
+  @@index([requesterId])
+  @@index([matchedUserId])
+}
+
+model RunnerGroup {
+  id          String @id @default(uuid())
+  name        String
+  description String
+  createdBy   String
+  maxMembers  Int    @default(20)
+  isPublic    Boolean @default(true)
+  tags        Json   @default("[]") // string[]
+
+  members GroupMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model GroupMember {
+  userId  String
+  groupId String
+  role    String @default("member")
+  joinedAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group RunnerGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@id([userId, groupId])
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@runmate/api",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.37.0",
+    "@prisma/client": "^6.2.1",
+    "@runmate/types": "*",
+    "@runmate/validators": "*",
+    "bullmq": "^5.34.4",
+    "fastify": "^5.2.1",
+    "@fastify/jwt": "^9.0.2",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/rate-limit": "^10.2.1",
+    "@fastify/swagger": "^9.4.1",
+    "@fastify/swagger-ui": "^5.2.1",
+    "ioredis": "^5.4.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "prisma": "^6.2.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.0"
+  }
+}

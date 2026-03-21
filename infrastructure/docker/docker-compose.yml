@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: runmate
+      POSTGRES_PASSWORD: runmate_dev
+      POSTGRES_DB: runmate
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U runmate"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ../../services/api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://runmate:runmate_dev@postgres:5432/runmate
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-jwt-secret
+      AI_PIPELINE_URL: http://ai-pipeline:8000
+      NODE_ENV: development
+    env_file:
+      - ../../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../services/api:/app
+      - /app/node_modules
+
+  ai-pipeline:
+    build:
+      context: ../../services/ai-pipeline
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../../.env
+    environment:
+      AI_PIPELINE_SECRET: dev-secret
+    volumes:
+      - ../../services/ai-pipeline:/app
+
+volumes:
+  postgres_data:
+  redis_data:
