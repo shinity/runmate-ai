@@ -8,36 +8,56 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "type-check": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": ["@testing-library/jest-native/extend-expect"],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|zustand|@tanstack)"
+    ],
+    "moduleNameMapper": {
+      "^@runmate/(.*)$": "<rootDir>/../../packages/$1/src/index.ts"
+    }
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
     "@runmate/types": "*",
     "@runmate/validators": "*",
     "@tanstack/react-query": "^5.64.0",
-    "expo": "~52.0.0",
-    "expo-router": "~4.0.0",
-    "expo-location": "~18.0.0",
-    "expo-sensors": "~14.0.0",
-    "expo-notifications": "~0.29.0",
-    "expo-secure-store": "~14.0.0",
-    "react": "18.3.1",
-    "react-native": "0.76.6",
-    "react-native-maps": "1.18.0",
-    "react-native-reanimated": "~3.16.0",
-    "react-native-gesture-handler": "~2.20.0",
-    "react-native-safe-area-context": "4.12.0",
-    "react-native-screens": "~4.4.0",
-    "zustand": "^5.0.2",
-    "zod": "^3.24.1",
+    "date-fns": "^4.1.0",
+    "expo": "~54.0.0",
+    "expo-linking": "~8.0.11",
+    "expo-location": "~19.0.8",
+    "expo-notifications": "~0.32.16",
+    "expo-router": "~6.0.23",
+    "expo-secure-store": "~15.0.8",
+    "expo-sensors": "~15.0.8",
+    "expo-status-bar": "~3.0.9",
     "nativewind": "^4.1.23",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-gesture-handler": "~2.28.0",
+    "react-native-maps": "1.20.1",
+    "react-native-reanimated": "~4.1.1",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-worklets": "^0.8.1",
     "tailwindcss": "^3.4.17",
-    "@expo/vector-icons": "^14.0.4",
-    "date-fns": "^4.1.0"
+    "zod": "^3.24.1",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "@types/react": "~18.3.12",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
+    "@types/jest": "^29.5.0",
+    "@types/react": "~19.1.10",
     "@types/react-native": "^0.73.0",
+    "jest": "^29.7.0",
+    "jest-expo": "~54.0.0",
     "typescript": "^5.7.2"
   }
 }

@@ -98,6 +98,7 @@ export type CreateRunDto = Pick<
       | 'title'
       | 'notes'
       | 'isPublic'
+      | 'effortScore'
     >
   > & {
     datapoints?: Omit<RunDatapoint, 'runId'>[]

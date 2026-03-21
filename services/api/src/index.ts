@@ -4,6 +4,9 @@ import jwt from '@fastify/jwt'
 import rateLimit from '@fastify/rate-limit'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
+import { createBullBoard } from '@bull-board/api'
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
+import { FastifyAdapter } from '@bull-board/fastify'
 
 import { authRoutes } from './routes/auth'
 import { userRoutes } from './routes/users'
@@ -11,6 +14,8 @@ import { runRoutes } from './routes/runs'
 import { coachingRoutes } from './routes/coaching'
 import { matchRoutes } from './routes/matching'
 import { syncRoutes } from './routes/sync'
+import { runAnalysisQueue, planAdaptationQueue, embeddingUpdateQueue, routeArtQueue } from './lib/queue'
+import { startRunAnalysisWorker } from './workers/runAnalysis.worker'
 
 const app = Fastify({
   logger: {
@@ -54,6 +59,20 @@ async function bootstrap() {
     routePrefix: '/docs',
   })
 
+  // ─── Bull Board (queue dashboard) ─────────────────────────────────────────
+  const serverAdapter = new FastifyAdapter()
+  createBullBoard({
+    queues: [
+      new BullMQAdapter(runAnalysisQueue),
+      new BullMQAdapter(planAdaptationQueue),
+      new BullMQAdapter(embeddingUpdateQueue),
+      new BullMQAdapter(routeArtQueue),
+    ],
+    serverAdapter,
+  })
+  serverAdapter.setBasePath('/admin/queues')
+  await app.register(serverAdapter.registerPlugin(), { prefix: '/admin/queues' })
+
   // ─── Auth decorator ────────────────────────────────────────────────────────
   app.decorate('authenticate', async (request: any, reply: any) => {
     try {
@@ -74,11 +93,25 @@ async function bootstrap() {
   // ─── Health check ──────────────────────────────────────────────────────────
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
 
+  // ─── Workers ───────────────────────────────────────────────────────────────
+  const runAnalysisWorker = startRunAnalysisWorker()
+  app.log.info('[Workers] runAnalysis worker started')
+
   // ─── Start ─────────────────────────────────────────────────────────────────
   const port = Number(process.env.PORT ?? 3000)
   await app.listen({ port, host: '0.0.0.0' })
   console.log(`RunMate API running on http://localhost:${port}`)
-  console.log(`Swagger docs: http://localhost:${port}/docs`)
+  console.log(`Swagger docs:  http://localhost:${port}/docs`)
+  console.log(`Queue dashboard: http://localhost:${port}/admin/queues`)
+
+  // Graceful shutdown
+  const shutdown = async () => {
+    await runAnalysisWorker.close()
+    await app.close()
+    process.exit(0)
+  }
+  process.on('SIGTERM', shutdown)
+  process.on('SIGINT', shutdown)
 }
 
 bootstrap().catch((err) => {

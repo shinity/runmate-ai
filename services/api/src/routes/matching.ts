@@ -162,6 +162,21 @@ export async function matchRoutes(app: FastifyInstance) {
     return reply.send({ data: updated })
   })
 
+  // GET /match/requests - received pending requests
+  app.get('/requests', { ...authenticate }, async (request, reply) => {
+    const userId = (request.user as any).sub
+
+    const requests = await prisma.runnerMatch.findMany({
+      where: { matchedUserId: userId, status: 'pending' },
+      include: {
+        requester: { select: { id: true, displayName: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return reply.send({ data: requests })
+  })
+
   // GET /match/active
   app.get('/active', { ...authenticate }, async (request, reply) => {
     const userId = (request.user as any).sub

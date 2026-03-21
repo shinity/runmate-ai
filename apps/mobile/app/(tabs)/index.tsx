@@ -1,10 +1,12 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useWeeklyStats } from '../../hooks/useRuns'
 import { useRecoveryStatus, useCoachingInsights } from '../../hooks/useCoaching'
 import { useAuthStore } from '../../stores/auth'
 import { formatPace, formatDistance } from '../../lib/format'
 
 export default function HomeScreen() {
+  const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const { data: stats } = useWeeklyStats()
   const { data: recovery } = useRecoveryStatus()
@@ -78,7 +80,7 @@ export default function HomeScreen() {
 
       {/* AI Insights Banner */}
       {unreadInsights > 0 && (
-        <TouchableOpacity style={styles.insightBanner}>
+        <TouchableOpacity style={styles.insightBanner} onPress={() => router.push('/(tabs)/coach')}>
           <Text style={styles.insightBannerIcon}>⚡</Text>
           <View>
             <Text style={styles.insightBannerTitle}>새 코칭 인사이트 {unreadInsights}개</Text>
@@ -88,7 +90,7 @@ export default function HomeScreen() {
       )}
 
       {/* Quick Action */}
-      <TouchableOpacity style={styles.startRunButton}>
+      <TouchableOpacity style={styles.startRunButton} onPress={() => router.navigate('/(tabs)/run')}>
         <Text style={styles.startRunButtonText}>🏃 런 시작하기</Text>
       </TouchableOpacity>
     </ScrollView>

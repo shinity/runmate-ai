@@ -1,7 +1,11 @@
+import { View, StyleSheet } from 'react-native'
 import { Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { useRunStore } from '../../stores/run'
 
 export default function TabLayout() {
+  const isRunning = useRunStore((s) => s.isRunning)
+
   return (
     <Tabs
       screenOptions={{
@@ -29,8 +33,12 @@ export default function TabLayout() {
         options={{
           title: '런 기록',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="timer-outline" size={size} color={color} />
+            <View>
+              <Ionicons name="timer-outline" size={size} color={isRunning ? '#22c55e' : color} />
+              {isRunning && <View style={styles.runningDot} />}
+            </View>
           ),
+          tabBarLabel: isRunning ? '달리는 중' : '런 기록',
         }}
       />
       <Tabs.Screen
@@ -63,3 +71,15 @@ export default function TabLayout() {
     </Tabs>
   )
 }
+
+const styles = StyleSheet.create({
+  runningDot: {
+    position: 'absolute',
+    top: 0,
+    right: -2,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+  },
+})

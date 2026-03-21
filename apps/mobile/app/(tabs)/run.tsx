@@ -1,18 +1,35 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native'
+import {
+  View, Text, TouchableOpacity, StyleSheet, FlatList,
+  Alert, ScrollView, ActivityIndicator,
+} from 'react-native'
 import * as Location from 'expo-location'
 import { useRunStore } from '../../stores/run'
 import { useCreateRun, useRuns } from '../../hooks/useRuns'
 import { formatPace, formatDistance, formatDuration } from '../../lib/format'
 
+interface RunSummary {
+  startedAt: string
+  endedAt: string
+  durationSeconds: number
+  distanceMeters: number
+  avgPaceSecPerKm: number
+  datapoints: Array<{
+    lat: number; lng: number; altitudeM: number | null
+    timestamp: string; paceSecPerKm: number | null
+  }>
+}
+
 export default function RunScreen() {
-  const [tab, setTab] = useState<'active' | 'history'>('history')
+  const [tab, setTab] = useState<'active' | 'history'>('active')
+  const [summary, setSummary] = useState<RunSummary | null>(null)
+  const [effortScore, setEffortScore] = useState(5)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const locationSubRef = useRef<Location.LocationSubscription | null>(null)
 
   const {
     isRunning, isPaused, elapsedSeconds, distanceMeters,
-    currentPaceSecPerKm, avgPaceSecPerKm, currentHeartRate,
+    currentPaceSecPerKm, avgPaceSecPerKm,
     startRun, pauseRun, resumeRun, stopRun, addDatapoint, tick,
   } = useRunStore()
 
@@ -32,7 +49,6 @@ export default function RunScreen() {
     try {
       await startRun()
       setTab('active')
-      // Start GPS tracking
       locationSubRef.current = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.BestForNavigation, distanceInterval: 5 },
         (loc) => {
@@ -52,64 +68,145 @@ export default function RunScreen() {
     }
   }
 
-  async function handleStop() {
+  function handleStop() {
     locationSubRef.current?.remove()
+
+    const finalDistance = distanceMeters
+    const finalDuration = elapsedSeconds
+    const finalPace = avgPaceSecPerKm ?? 360
+    const endedAt = new Date().toISOString()
+    const startedAt = new Date(Date.now() - elapsedSeconds * 1000).toISOString()
     const datapoints = stopRun()
-    if (distanceMeters < 100) {
+
+    if (finalDistance < 100) {
       setTab('history')
       return
     }
-    await createRun.mutateAsync({
-      startedAt: new Date(Date.now() - elapsedSeconds * 1000).toISOString(),
-      endedAt: new Date().toISOString(),
-      durationSeconds: elapsedSeconds,
-      distanceMeters,
-      elevationGainMeters: 0,
-      elevationLossMeters: 0,
-      avgPaceSecPerKm: avgPaceSecPerKm ?? 360,
-      dataSource: 'app_native',
-      datapoints: datapoints.map((d) => ({
-        timestamp: d.timestamp,
-        lat: d.lat,
-        lng: d.lng,
-        altitudeM: d.altitudeM,
-        paceSecPerKm: d.paceSecPerKm,
-        heartRate: null,
-        cadenceSpm: null,
-        powerWatts: null,
-      })),
-    })
-    setTab('history')
+
+    setSummary({ startedAt, endedAt, durationSeconds: finalDuration, distanceMeters: finalDistance, avgPaceSecPerKm: finalPace, datapoints })
+    setEffortScore(5)
+  }
+
+  async function handleSaveSummary() {
+    if (!summary) return
+    try {
+      await createRun.mutateAsync({
+        startedAt: summary.startedAt,
+        endedAt: summary.endedAt,
+        durationSeconds: summary.durationSeconds,
+        distanceMeters: summary.distanceMeters,
+        elevationGainMeters: 0,
+        elevationLossMeters: 0,
+        avgPaceSecPerKm: summary.avgPaceSecPerKm,
+        effortScore,
+        dataSource: 'app_native',
+        datapoints: summary.datapoints.map((d) => ({
+          timestamp: d.timestamp,
+          lat: d.lat,
+          lng: d.lng,
+          altitudeM: d.altitudeM,
+          paceSecPerKm: d.paceSecPerKm,
+          heartRate: null,
+          cadenceSpm: null,
+          powerWatts: null,
+        })),
+      })
+      setSummary(null)
+      setTab('history')
+    } catch (e: any) {
+      Alert.alert('저장 실패', e.message ?? '런 저장에 실패했습니다.')
+    }
+  }
+
+  // Run summary screen
+  if (summary) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.summaryContent}>
+        <Text style={styles.summaryTitle}>런 완료!</Text>
+        <Text style={styles.summaryEmoji}>🎉</Text>
+
+        <View style={styles.summaryMetrics}>
+          <View style={styles.summaryMetric}>
+            <Text style={styles.summaryMetricValue}>{formatDistance(summary.distanceMeters)}</Text>
+            <Text style={styles.summaryMetricLabel}>거리</Text>
+          </View>
+          <View style={styles.summaryMetric}>
+            <Text style={styles.summaryMetricValue}>{formatDuration(summary.durationSeconds)}</Text>
+            <Text style={styles.summaryMetricLabel}>시간</Text>
+          </View>
+          <View style={styles.summaryMetric}>
+            <Text style={styles.summaryMetricValue}>{formatPace(summary.avgPaceSecPerKm)}</Text>
+            <Text style={styles.summaryMetricLabel}>평균 페이스</Text>
+          </View>
+        </View>
+
+        <View style={styles.effortSection}>
+          <Text style={styles.effortLabel}>운동 강도 (1~10)</Text>
+          <Text style={styles.effortValue}>{effortScore}</Text>
+          <View style={styles.effortRow}>
+            {[1,2,3,4,5,6,7,8,9,10].map((v) => (
+              <TouchableOpacity
+                key={v}
+                style={[styles.effortBtn, effortScore === v && styles.effortBtnActive]}
+                onPress={() => setEffortScore(v)}
+              >
+                <Text style={[styles.effortBtnText, effortScore === v && styles.effortBtnTextActive]}>
+                  {v}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.effortHints}>
+            <Text style={styles.effortHint}>매우 쉬움</Text>
+            <Text style={styles.effortHint}>최대 강도</Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.saveSummaryBtn, createRun.isPending && styles.btnDisabledOpacity]}
+          onPress={handleSaveSummary}
+          disabled={createRun.isPending}
+        >
+          {createRun.isPending
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={styles.saveSummaryBtnText}>저장하기 💾</Text>
+          }
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.discardBtn}
+          onPress={() =>
+            Alert.alert('기록 삭제', '이 런 기록을 저장하지 않을까요?', [
+              { text: '취소', style: 'cancel' },
+              { text: '삭제', style: 'destructive', onPress: () => { setSummary(null); setTab('active') } },
+            ])
+          }
+        >
+          <Text style={styles.discardBtnText}>저장 안 함</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    )
   }
 
   return (
     <View style={styles.container}>
-      {/* Tab switcher */}
       <View style={styles.tabs}>
         <TouchableOpacity
           style={[styles.tab, tab === 'active' && styles.tabActive]}
           onPress={() => setTab('active')}
         >
-          <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>
-            활성 런
-          </Text>
+          <Text style={[styles.tabText, tab === 'active' && styles.tabTextActive]}>활성 런</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, tab === 'history' && styles.tabActive]}
           onPress={() => setTab('history')}
         >
-          <Text style={[styles.tabText, tab === 'history' && styles.tabTextActive]}>
-            기록
-          </Text>
+          <Text style={[styles.tabText, tab === 'history' && styles.tabTextActive]}>기록</Text>
         </TouchableOpacity>
       </View>
 
       {tab === 'active' ? (
         <View style={styles.activeRun}>
-          {/* Timer display */}
           <Text style={styles.timer}>{formatDuration(elapsedSeconds)}</Text>
-
-          {/* Metrics row */}
           <View style={styles.metricsRow}>
             <View style={styles.metric}>
               <Text style={styles.metricValue}>{formatDistance(distanceMeters)}</Text>
@@ -129,21 +226,13 @@ export default function RunScreen() {
             </View>
           </View>
 
-          {currentHeartRate && (
-            <Text style={styles.heartRate}>❤️ {currentHeartRate} bpm</Text>
-          )}
-
-          {/* Controls */}
           {!isRunning ? (
             <TouchableOpacity style={styles.startBtn} onPress={handleStart}>
               <Text style={styles.startBtnText}>🏃 시작</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.controls}>
-              <TouchableOpacity
-                style={styles.pauseBtn}
-                onPress={isPaused ? resumeRun : pauseRun}
-              >
+              <TouchableOpacity style={styles.pauseBtn} onPress={isPaused ? resumeRun : pauseRun}>
                 <Text style={styles.pauseBtnText}>{isPaused ? '▶ 재개' : '⏸ 일시정지'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.stopBtn} onPress={handleStop}>
@@ -159,7 +248,11 @@ export default function RunScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>첫 번째 런을 기록해보세요! 🏃</Text>
+              <Text style={styles.emptyIcon}>🏃</Text>
+              <Text style={styles.emptyText}>아직 기록이 없어요</Text>
+              <TouchableOpacity onPress={() => setTab('active')}>
+                <Text style={styles.emptyAction}>활성 런 탭에서 시작하기 →</Text>
+              </TouchableOpacity>
             </View>
           }
           renderItem={({ item }) => (
@@ -198,7 +291,6 @@ const styles = StyleSheet.create({
   metric: { alignItems: 'center' },
   metricValue: { fontSize: 24, fontWeight: '700', color: '#f8fafc' },
   metricLabel: { fontSize: 12, color: '#64748b', marginTop: 4 },
-  heartRate: { color: '#f87171', fontSize: 18, marginBottom: 24 },
   startBtn: { backgroundColor: '#3b82f6', borderRadius: 80, width: 160, height: 160, alignItems: 'center', justifyContent: 'center' },
   startBtnText: { color: '#fff', fontSize: 22, fontWeight: '700' },
   controls: { flexDirection: 'row', gap: 16 },
@@ -208,7 +300,9 @@ const styles = StyleSheet.create({
   stopBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   listContent: { padding: 16 },
   empty: { alignItems: 'center', marginTop: 80 },
-  emptyText: { color: '#64748b', fontSize: 16 },
+  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyText: { color: '#64748b', fontSize: 16, marginBottom: 12 },
+  emptyAction: { color: '#3b82f6', fontSize: 15, fontWeight: '600' },
   runCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12 },
   runCardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   runTitle: { color: '#f8fafc', fontWeight: '700', fontSize: 16 },
@@ -216,4 +310,27 @@ const styles = StyleSheet.create({
   runStats: { flexDirection: 'row', alignItems: 'center' },
   runStat: { color: '#94a3b8', fontSize: 14 },
   runStatDivider: { color: '#475569', marginHorizontal: 8 },
+  // Summary styles
+  summaryContent: { flexGrow: 1, padding: 24, paddingBottom: 48, alignItems: 'center' },
+  summaryTitle: { fontSize: 28, fontWeight: '800', color: '#f8fafc', marginTop: 24 },
+  summaryEmoji: { fontSize: 64, marginVertical: 16 },
+  summaryMetrics: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', backgroundColor: '#1e293b', borderRadius: 20, padding: 24, marginBottom: 24 },
+  summaryMetric: { alignItems: 'center' },
+  summaryMetricValue: { fontSize: 22, fontWeight: '800', color: '#f8fafc' },
+  summaryMetricLabel: { fontSize: 12, color: '#64748b', marginTop: 4 },
+  effortSection: { width: '100%', backgroundColor: '#1e293b', borderRadius: 20, padding: 20, marginBottom: 24 },
+  effortLabel: { color: '#94a3b8', fontSize: 13, fontWeight: '600', marginBottom: 4 },
+  effortValue: { color: '#3b82f6', fontSize: 36, fontWeight: '800', textAlign: 'center', marginBottom: 12 },
+  effortRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  effortBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#334155', alignItems: 'center', justifyContent: 'center' },
+  effortBtnActive: { backgroundColor: '#3b82f6' },
+  effortBtnText: { color: '#64748b', fontSize: 12, fontWeight: '600' },
+  effortBtnTextActive: { color: '#fff' },
+  effortHints: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  effortHint: { color: '#475569', fontSize: 11 },
+  saveSummaryBtn: { backgroundColor: '#3b82f6', borderRadius: 16, padding: 18, alignItems: 'center', width: '100%', marginBottom: 12 },
+  saveSummaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 17 },
+  discardBtn: { padding: 12, alignItems: 'center' },
+  discardBtnText: { color: '#475569', fontSize: 14 },
+  btnDisabledOpacity: { opacity: 0.6 },
 })

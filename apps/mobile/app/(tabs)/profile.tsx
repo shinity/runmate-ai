@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useAuthStore } from '../../stores/auth'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../../lib/api'
@@ -6,6 +7,7 @@ import type { PersonalRecord } from '@runmate/types'
 import { formatPace } from '../../lib/format'
 
 export default function ProfileScreen() {
+  const router = useRouter()
   const { user, logout } = useAuthStore()
 
   const { data: prs } = useQuery({
@@ -78,15 +80,15 @@ export default function ProfileScreen() {
       {/* Settings */}
       <Text style={styles.sectionTitle}>설정</Text>
       <View style={styles.card}>
-        <TouchableOpacity style={styles.settingRow}>
+        <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/profile-edit')}>
           <Text style={styles.settingLabel}>프로필 수정</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]}>
+        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => router.push('/devices')}>
           <Text style={styles.settingLabel}>연결된 기기</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]}>
+        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => router.push('/match-settings')}>
           <Text style={styles.settingLabel}>매칭 설정</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
