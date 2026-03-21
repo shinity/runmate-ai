@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "RunMate AI",
+    "slug": "runmate-ai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "runmate",
+    "splash": {
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "io.runmate.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "RunMate needs location to track your runs.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "RunMate needs background location to track runs.",
+        "NSMotionUsageDescription": "RunMate uses motion sensors to detect cadence.",
+        "NSHealthShareUsageDescription": "RunMate reads your health data to import workouts.",
+        "NSHealthUpdateUsageDescription": "RunMate writes run data to Apple Health."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      },
+      "package": "io.runmate.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "BODY_SENSORS",
+        "ACTIVITY_RECOGNITION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-location",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#3b82f6"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

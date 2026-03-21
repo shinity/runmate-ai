@@ -18,8 +18,8 @@ enum ExperienceLevel {
 
 enum RunningGoal {
   fitness
-  five_k
-  ten_k
+  five_k    @map("5k")
+  ten_k     @map("10k")
   half_marathon
   marathon
   ultra

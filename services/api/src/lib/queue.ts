@@ -1,5 +1,8 @@
 import { Queue } from 'bullmq'
-import { redis } from './redis'
+
+const redisConnection = {
+  url: process.env.REDIS_URL ?? 'redis://localhost:6379',
+}
 
 // Job type definitions
 export interface RunAnalysisJob {
@@ -21,9 +24,9 @@ export interface RouteArtJob {
   userId: string
 }
 
-// Queues
-export const runAnalysisQueue = new Queue<RunAnalysisJob>('run-analysis', {
-  connection: redis,
+// Queues — third generic is job name type (string keeps it flexible)
+export const runAnalysisQueue = new Queue<RunAnalysisJob, void, string>('run-analysis', {
+  connection: redisConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: 'exponential', delay: 5000 },
@@ -32,26 +35,26 @@ export const runAnalysisQueue = new Queue<RunAnalysisJob>('run-analysis', {
   },
 })
 
-export const planAdaptationQueue = new Queue<PlanAdaptationJob>('plan-adaptation', {
-  connection: redis,
+export const planAdaptationQueue = new Queue<PlanAdaptationJob, void, string>('plan-adaptation', {
+  connection: redisConnection,
   defaultJobOptions: {
     attempts: 2,
     backoff: { type: 'fixed', delay: 10000 },
   },
 })
 
-export const embeddingUpdateQueue = new Queue<EmbeddingUpdateJob>('embedding-update', {
-  connection: redis,
+export const embeddingUpdateQueue = new Queue<EmbeddingUpdateJob, void, string>('embedding-update', {
+  connection: redisConnection,
   defaultJobOptions: {
     attempts: 3,
     backoff: { type: 'exponential', delay: 3000 },
   },
 })
 
-export const routeArtQueue = new Queue<RouteArtJob>('route-art', {
-  connection: redis,
+export const routeArtQueue = new Queue<RouteArtJob, void, string>('route-art', {
+  connection: redisConnection,
   defaultJobOptions: {
     attempts: 2,
-    priority: 10, // lower priority than coaching
+    priority: 10,
   },
 })

@@ -1,13 +1,16 @@
-import { Worker } from 'bullmq'
-import { redis } from '../lib/redis'
+import { Worker, Job } from 'bullmq'
+
+const redisConnection = {
+  url: process.env.REDIS_URL ?? 'redis://localhost:6379',
+}
 import { prisma } from '../lib/prisma'
 import { RunAnalysisJob } from '../lib/queue'
 import { analyzeRunWithClaude } from './claude'
 
 export function startRunAnalysisWorker() {
-  const worker = new Worker<RunAnalysisJob>(
+  const worker = new Worker<RunAnalysisJob, void, string>(
     'run-analysis',
-    async (job) => {
+    async (job: Job<RunAnalysisJob, void, string>) => {
       const { runId, userId } = job.data
       console.log(`[RunAnalysis] Processing run ${runId} for user ${userId}`)
 
@@ -76,7 +79,7 @@ export function startRunAnalysisWorker() {
 
       console.log(`[RunAnalysis] Done for run ${runId}`)
     },
-    { connection: redis, concurrency: 5 },
+    { connection: redisConnection, concurrency: 5 },
   )
 
   worker.on('failed', (job, err) => {
