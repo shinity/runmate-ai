@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm install *)",
+      "Bash(npm ci)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(npx expo *)",
+      "Bash(npx turbo *)",
+      "Bash(git status)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git branch *)",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "Bash(git pull *)",
+      "Bash(gh *)",
+      "Bash(curl -s http://localhost*)",
+      "Bash(brew services *)",
+      "Bash(redis-cli ping)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Edit(.env)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/prisma-auto-generate.sh",
+            "async": true,
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
