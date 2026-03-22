@@ -2,7 +2,8 @@ import os
 from openai import AsyncOpenAI
 from pinecone import Pinecone
 
-openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+_openai_api_key = os.getenv("OPENAI_API_KEY")
+openai_client = AsyncOpenAI(api_key=_openai_api_key) if _openai_api_key else None
 
 _pinecone: Pinecone | None = None
 _index = None
@@ -42,6 +43,8 @@ def build_profile_text(profile: dict) -> str:
 
 async def update_runner_embedding(user_id: str, profile: dict) -> None:
     """Generate embedding and upsert to Pinecone."""
+    if not openai_client:
+        return
     text = build_profile_text(profile)
 
     response = await openai_client.embeddings.create(

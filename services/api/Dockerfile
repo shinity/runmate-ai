@@ -34,7 +34,12 @@ FROM base AS production
 ENV NODE_ENV=production
 WORKDIR /app/services/api
 COPY --from=builder /app/services/api/dist ./dist
-COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/services/api/prisma ./prisma
+COPY --from=builder /app/node_modules /app/node_modules
+# workspace 패키지 빌드 결과물 복사 (symlink 대상)
+COPY --from=builder /app/packages/types/dist /app/packages/types/dist
+COPY --from=builder /app/packages/types/package.json /app/packages/types/package.json
+COPY --from=builder /app/packages/validators/dist /app/packages/validators/dist
+COPY --from=builder /app/packages/validators/package.json /app/packages/validators/package.json
 EXPOSE 3000
 CMD ["node", "dist/index.js"]
