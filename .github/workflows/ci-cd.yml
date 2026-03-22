@@ -137,6 +137,17 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
 
+      - name: Copy compose file to NAS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.NAS_TAILSCALE_IP }}
+          username: ${{ secrets.NAS_SSH_USER }}
+          key: ${{ secrets.NAS_SSH_KEY }}
+          port: ${{ secrets.NAS_SSH_PORT }}
+          source: infrastructure/docker/docker-compose.prod.yml
+          target: ${{ secrets.NAS_PROJECT_PATH }}
+          strip_components: 2
+
       - name: Deploy to NAS
         uses: appleboy/ssh-action@v1
         with:
@@ -148,18 +159,15 @@ jobs:
             set -e
             cd ${{ secrets.NAS_PROJECT_PATH }}
 
-            # 최신 코드 pull
-            git pull origin master
-
             # GHCR 로그인
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
               -u ${{ github.actor }} --password-stdin
 
             # 새 이미지 pull
-            docker compose -f infrastructure/docker/docker-compose.prod.yml pull api
+            docker compose -f docker-compose.prod.yml pull api
 
             # 무중단 재시작 (api만)
-            docker compose -f infrastructure/docker/docker-compose.prod.yml up -d --no-deps api
+            docker compose -f docker-compose.prod.yml up -d --no-deps api
 
             # 오래된 이미지 정리
             docker image prune -f
