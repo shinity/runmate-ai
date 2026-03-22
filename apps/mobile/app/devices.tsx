@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native'
 import { Stack } from 'expo-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../stores/auth'
 import { api } from '../lib/api'
 
@@ -91,7 +92,7 @@ export default function DevicesScreen() {
 
       {AVAILABLE_DEVICES.every((d) => devices.some((c: any) => c.deviceType === d.type)) && (
         <View style={styles.empty}>
-          <Text style={styles.emptyIcon}>✅</Text>
+          <Ionicons name="checkmark-circle" size={64} color="#22c55e" />
           <Text style={styles.emptyText}>모든 기기가 연결되어 있어요</Text>
         </View>
       )}
@@ -112,6 +113,6 @@ const styles = StyleSheet.create({
   disconnectBtnText: { color: '#fca5a5', fontWeight: '600', fontSize: 13 },
   addBtnText: { color: '#3b82f6', fontWeight: '700', fontSize: 14 },
   empty: { alignItems: 'center', marginTop: 40 },
-  emptyIcon: { fontSize: 40, marginBottom: 8 },
+  emptyIcon: { marginBottom: 8 },
   emptyText: { color: '#64748b', fontSize: 15 },
 })

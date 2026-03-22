@@ -12,7 +12,9 @@
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "db:generate": "turbo db:generate",
-    "db:migrate": "turbo db:migrate"
+    "db:migrate": "turbo db:migrate",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
@@ -24,5 +26,13 @@
   "packageManager": "npm@10.8.2",
   "engines": {
     "node": ">=22.0.0"
-  }
+  },
+  "dependencies": {
+    "react-native-health": "^1.19.0",
+    "react-native-health-connect": "^3.5.0",
+    "expo": "~54.0.33",
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "version": "1.0.0"
 }

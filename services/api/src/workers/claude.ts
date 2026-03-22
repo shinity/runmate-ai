@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '')
 
 interface RunAnalysisInput {
   run: {
@@ -46,29 +46,51 @@ export async function analyzeRunWithClaude(input: RunAnalysisInput): Promise<Coa
   const paceSec = run.avgPaceSecPerKm % 60
   const durationMin = Math.round(run.durationSeconds / 60)
 
-  const recentWeekLoad = historicalRuns
-    .filter((r) => true) // last 7 days filter would need timestamps
-    .reduce((s, r) => s + r.trainingLoad, 0)
+  const recentWeekLoad = historicalRuns.reduce((s, r) => s + r.trainingLoad, 0)
 
-  const systemPrompt = `You are an expert running coach. Analyze the runner's data and provide a concise, personalized coaching insight.
-
-Always respond with valid JSON matching this exact schema:
-{
-  "type": one of ["recovery_advice", "performance_analysis", "habit_pattern", "injury_risk_alert", "motivation", "plan_adjustment"],
-  "content": "2-4 sentences of coaching insight, conversational and encouraging",
-  "priority": one of ["low", "medium", "high", "urgent"],
-  "metrics": { key-value pairs of relevant numbers },
-  "actionItems": ["actionable tip 1", "actionable tip 2"] (1-3 items max)
-}
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    generationConfig: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: SchemaType.OBJECT,
+        properties: {
+          type: {
+            type: SchemaType.STRING,
+            format: 'enum',
+            enum: ['recovery_advice', 'performance_analysis', 'habit_pattern', 'injury_risk_alert', 'motivation', 'plan_adjustment'],
+          },
+          content: { type: SchemaType.STRING },
+          priority: {
+            type: SchemaType.STRING,
+            format: 'enum',
+            enum: ['low', 'medium', 'high', 'urgent'],
+          },
+          metrics: {
+            type: SchemaType.OBJECT,
+            properties: {},
+          },
+          actionItems: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+          },
+        },
+        required: ['type', 'content', 'priority', 'metrics', 'actionItems'],
+      },
+      temperature: 0.4,
+      maxOutputTokens: 512,
+    },
+    systemInstruction: `You are an expert running coach. Analyze the runner's data and provide a concise, personalized coaching insight.
 
 Runner profile:
 - Experience: ${user.experienceLevel}
 - Primary goal: ${user.primaryGoal}
 - Weekly target: ${user.weeklyTargetKm}km
 ${activePlan ? `- Active plan: "${activePlan.title}" - ${activePlan.goal}` : '- No active training plan'}
-- Recent training load (last 30 runs avg): ${historicalRuns.length > 0 ? Math.round(historicalRuns.reduce((s, r) => s + r.trainingLoad, 0) / historicalRuns.length) : 0}`
+- Recent training load (last 30 runs avg): ${historicalRuns.length > 0 ? Math.round(historicalRuns.reduce((s, r) => s + r.trainingLoad, 0) / historicalRuns.length) : 0}`,
+  })
 
-  const userMessage = `Just completed a run:
+  const prompt = `Just completed a run:
 - Distance: ${distKm}km
 - Duration: ${durationMin} min
 - Avg pace: ${paceMin}:${String(paceSec).padStart(2, '0')}/km
@@ -85,23 +107,11 @@ Recent training context:
 
 Provide a coaching insight for this run.`
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-5',
-    max_tokens: 512,
-    temperature: 0.4,
-    system: systemPrompt,
-    messages: [{ role: 'user', content: userMessage }],
-  })
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : ''
-
   try {
-    // Extract JSON from response (handles markdown code blocks too)
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('No JSON found in response')
-    return JSON.parse(jsonMatch[0]) as CoachingInsightOutput
+    const result = await model.generateContent(prompt)
+    const text = result.response.text()
+    return JSON.parse(text) as CoachingInsightOutput
   } catch {
-    // Fallback insight if parsing fails
     return {
       type: 'performance_analysis',
       content: `Great run! You covered ${distKm}km at ${paceMin}:${String(paceSec).padStart(2, '0')}/km pace. Keep up the consistent training.`,
@@ -126,7 +136,14 @@ export async function generateTrainingPlanWithClaude(input: {
     (new Date(targetDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 7),
   )
 
-  const systemPrompt = `You are an expert running coach specializing in evidence-based training plans.
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.3,
+      maxOutputTokens: 4096,
+    },
+    systemInstruction: `You are an expert running coach specializing in evidence-based training plans.
 Generate a structured training plan as JSON. Respond ONLY with valid JSON.
 
 Schema:
@@ -157,29 +174,24 @@ Schema:
 sessionType options: easy, tempo, interval, long_run, recovery, cross_train, rest
 dayOfWeek: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
 Only schedule sessions on days: ${availableDays.join(', ')}
-Plan length: ${weeksUntilGoal} weeks (max 20)`
+Plan length: ${weeksUntilGoal} weeks (max 20)`,
+  })
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-5',
-    max_tokens: 4096,
-    temperature: 0.3,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `Create a training plan:
+  const prompt = `Create a training plan:
 Goal: ${goal}
 Target date: ${targetDate} (${weeksUntilGoal} weeks away)
 Experience level: ${user.experienceLevel}
 Current fitness: ${currentFitnessLevel}
 Available days: ${availableDays.join(', ')} (0=Sun through 6=Sat)
 Current weekly km: ${user.weeklyTargetKm}km
-Recent training: ${recentRunsSummary}`,
-      },
-    ],
-  })
+Recent training: ${recentRunsSummary}`
 
-  const text = response.content[0].type === 'text' ? response.content[0].text : '{}'
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  return jsonMatch ? JSON.parse(jsonMatch[0]) : {}
+  try {
+    const result = await model.generateContent(prompt)
+    const text = result.response.text()
+    const jsonMatch = text.match(/\{[\s\S]*\}/)
+    return jsonMatch ? JSON.parse(jsonMatch[0]) : {}
+  } catch {
+    return {}
+  }
 }

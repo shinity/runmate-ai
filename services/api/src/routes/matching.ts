@@ -1,7 +1,9 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { embeddingUpdateQueue } from '../lib/queue'
+import { findSimilarRunnersFromPinecone } from '../workers/embeddingSearch'
 import { UpdateMatchProfileSchema, CreateGroupSchema } from '@runmate/validators'
+import { sendToUser } from '../lib/push'
 
 export async function matchRoutes(app: FastifyInstance) {
   const authenticate = { preHandler: [app.authenticate] }
@@ -67,7 +69,52 @@ export async function matchRoutes(app: FastifyInstance) {
       return reply.send({ data: [] })
     }
 
-    // Simple DB-based matching for MVP (replace with Pinecone in v2)
+    // Pinecone 우선 시도 → 실패/미설정 시 DB 폴백
+    const pineconeResults = await findSimilarRunnersFromPinecone(userId, 20)
+
+    if (pineconeResults !== null && pineconeResults.length > 0) {
+      // Pinecone 결과: userId 배열 → DB에서 user + matchProfile 조회
+      const similarUserIds = pineconeResults.map((r) => r.userId)
+
+      const profilesFromDb = await prisma.matchProfile.findMany({
+        where: { userId: { in: similarUserIds } },
+        include: {
+          user: {
+            select: { id: true, displayName: true, avatarUrl: true, city: true, experienceLevel: true },
+          },
+        },
+      })
+
+      // Pinecone 순서(유사도 순) 보존을 위해 similarityScore 매핑
+      const scoreMap = new Map(pineconeResults.map((r) => [r.userId, r.similarityScore]))
+
+      const suggestions = profilesFromDb
+        .map((c) => {
+          const similarityScore = scoreMap.get(c.userId) ?? 0
+          return {
+            user: c.user,
+            matchProfile: {
+              avgPaceSecPerKm: c.avgPaceSecPerKm,
+              avgWeeklyKm: c.avgWeeklyKm,
+              runningStyle: c.runningStyle,
+              preferredRunTime: c.preferredRunTime,
+            },
+            compatibility: {
+              pace: Math.round(similarityScore * 100) / 100,
+              schedule: 0.7,
+              goal: 0.8,
+              style: c.runningStyle === myProfile.runningStyle ? 1 : 0.5,
+              overall: Math.round(similarityScore * 0.85 * 100) / 100,
+            },
+          }
+        })
+        .sort((a, b) => b.compatibility.overall - a.compatibility.overall)
+        .slice(0, 5)
+
+      return reply.send({ data: suggestions })
+    }
+
+    // DB 폴백: 페이스 차이 기반 매칭
     const candidates = await prisma.matchProfile.findMany({
       where: {
         userId: { not: userId },
@@ -98,7 +145,7 @@ export async function matchRoutes(app: FastifyInstance) {
           },
           compatibility: {
             pace: Math.round(paceSimilarity * 100) / 100,
-            schedule: 0.7, // placeholder until schedule analysis is implemented
+            schedule: 0.7,
             goal: 0.8,
             style: c.runningStyle === myProfile.runningStyle ? 1 : 0.5,
             overall: Math.round(paceSimilarity * 0.85 * 100) / 100,
@@ -137,6 +184,18 @@ export async function matchRoutes(app: FastifyInstance) {
       data: { requesterId, matchedUserId: targetId },
     })
 
+    // Notify target user about the new match request (non-blocking)
+    const requester = await prisma.user.findUnique({
+      where: { id: requesterId },
+      select: { displayName: true },
+    })
+    sendToUser(targetId, {
+      title: '새 러닝메이트 요청',
+      body: `${requester?.displayName ?? '누군가'}님이 러닝메이트를 요청했습니다`,
+      data: { type: 'match_request', matchId: match.id },
+      sound: 'default',
+    }).catch((err) => console.error('[Match] Push notification failed:', err))
+
     return reply.code(201).send({ data: match })
   })
 
@@ -159,6 +218,20 @@ export async function matchRoutes(app: FastifyInstance) {
       data: { status, respondedAt: new Date() },
     })
 
+    // Notify requester if request was accepted (non-blocking)
+    if (status === 'accepted') {
+      const responder = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { displayName: true },
+      })
+      sendToUser(match.requesterId, {
+        title: '러닝메이트 요청 수락',
+        body: `${responder?.displayName ?? '상대방'}님이 러닝메이트 요청을 수락했습니다`,
+        data: { type: 'match_accepted', matchId },
+        sound: 'default',
+      }).catch((err) => console.error('[Match] Push notification failed:', err))
+    }
+
     return reply.send({ data: updated })
   })
 
@@ -171,7 +244,7 @@ export async function matchRoutes(app: FastifyInstance) {
       include: {
         requester: { select: { id: true, displayName: true, avatarUrl: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { matchedAt: 'desc' },
     })
 
     return reply.send({ data: requests })

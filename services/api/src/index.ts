@@ -4,6 +4,7 @@ import jwt from '@fastify/jwt'
 import rateLimit from '@fastify/rate-limit'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
+import websocket from '@fastify/websocket'
 import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { FastifyAdapter } from '@bull-board/fastify'
@@ -14,8 +15,12 @@ import { runRoutes } from './routes/runs'
 import { coachingRoutes } from './routes/coaching'
 import { matchRoutes } from './routes/matching'
 import { syncRoutes } from './routes/sync'
+import { messageRoutes } from './routes/messages'
+import { wsRoutes } from './routes/ws'
 import { runAnalysisQueue, planAdaptationQueue, embeddingUpdateQueue, routeArtQueue } from './lib/queue'
 import { startRunAnalysisWorker } from './workers/runAnalysis.worker'
+import { startRouteArtWorker } from './workers/routeArt.worker'
+import { startEmbeddingUpdateWorker } from './workers/embeddingUpdate.worker'
 
 const app = Fastify({
   logger: {
@@ -43,6 +48,8 @@ async function bootstrap() {
     max: 100,
     timeWindow: '1 minute',
   })
+
+  await app.register(websocket)
 
   await app.register(swagger, {
     openapi: {
@@ -89,6 +96,8 @@ async function bootstrap() {
   await app.register(coachingRoutes, { prefix: '/api/v1/coaching' })
   await app.register(matchRoutes, { prefix: '/api/v1/match' })
   await app.register(syncRoutes, { prefix: '/api/v1/sync' })
+  await app.register(messageRoutes, { prefix: '/api/v1/messages' })
+  await app.register(wsRoutes)
 
   // ─── Health check ──────────────────────────────────────────────────────────
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
@@ -96,6 +105,12 @@ async function bootstrap() {
   // ─── Workers ───────────────────────────────────────────────────────────────
   const runAnalysisWorker = startRunAnalysisWorker()
   app.log.info('[Workers] runAnalysis worker started')
+
+  const routeArtWorker = startRouteArtWorker()
+  app.log.info('[Workers] routeArt worker started')
+
+  const embeddingUpdateWorker = startEmbeddingUpdateWorker()
+  app.log.info('[Workers] embeddingUpdate worker started')
 
   // ─── Start ─────────────────────────────────────────────────────────────────
   const port = Number(process.env.PORT ?? 3000)
@@ -107,6 +122,8 @@ async function bootstrap() {
   // Graceful shutdown
   const shutdown = async () => {
     await runAnalysisWorker.close()
+    await routeArtWorker.close()
+    await embeddingUpdateWorker.close()
     await app.close()
     process.exit(0)
   }

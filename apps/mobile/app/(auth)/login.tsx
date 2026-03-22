@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image,
 } from 'react-native'
 import { Link } from 'expo-router'
 import { useAuthStore } from '../../stores/auth'
@@ -29,7 +29,7 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
-        <Text style={styles.logo}>🏃</Text>
+        <Image source={require('../../assets/icon.png')} style={styles.logo} />
         <Text style={styles.title}>RunMate AI</Text>
         <Text style={styles.subtitle}>AI 러닝 코치와 함께하세요</Text>
 
@@ -78,6 +78,12 @@ export default function LoginScreen() {
             </TouchableOpacity>
           </Link>
         </View>
+
+        <Link href="/(auth)/forgot-password" asChild>
+          <TouchableOpacity style={{ marginTop: 12, alignSelf: 'center' }}>
+            <Text style={{ color: '#64748b', fontSize: 14 }}>비밀번호를 잊으셨나요?</Text>
+          </TouchableOpacity>
+        </Link>
       </View>
     </KeyboardAvoidingView>
   )
@@ -86,7 +92,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   inner: { flex: 1, justifyContent: 'center', padding: 24 },
-  logo: { fontSize: 56, textAlign: 'center', marginBottom: 8 },
+  logo: { width: 80, height: 80, borderRadius: 20, alignSelf: 'center', marginBottom: 8 },
   title: { fontSize: 32, fontWeight: '800', color: '#f8fafc', textAlign: 'center', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#64748b', textAlign: 'center', marginBottom: 40 },
   form: { gap: 8 },

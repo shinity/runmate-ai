@@ -4,6 +4,7 @@ import {
   ActivityIndicator, Alert,
 } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../../stores/auth'
 
 const EXPERIENCE_OPTIONS = [
@@ -14,12 +15,12 @@ const EXPERIENCE_OPTIONS = [
 ]
 
 const GOAL_OPTIONS = [
-  { value: 'fitness', label: '건강 유지', icon: '💪' },
-  { value: 'five_k', label: '5km 완주', icon: '🎯' },
-  { value: 'ten_k', label: '10km 완주', icon: '🏅' },
-  { value: 'half_marathon', label: '하프 마라톤', icon: '🥈' },
-  { value: 'marathon', label: '마라톤', icon: '🏆' },
-  { value: 'ultra', label: '울트라', icon: '🦅' },
+  { value: 'fitness', label: '건강 유지', icon: 'fitness' },
+  { value: 'five_k', label: '5km 완주', icon: 'flag' },
+  { value: 'ten_k', label: '10km 완주', icon: 'medal' },
+  { value: 'half_marathon', label: '하프 마라톤', icon: 'trophy' },
+  { value: 'marathon', label: '마라톤', icon: 'trophy' },
+  { value: 'ultra', label: '울트라', icon: 'star' },
 ]
 
 export default function ProfileSetupScreen() {
@@ -51,7 +52,7 @@ export default function ProfileSetupScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ headerShown: false, gestureEnabled: false }} />
-      <Text style={styles.logo}>🏃</Text>
+      <Ionicons name="body" size={56} color="#3b82f6" style={{ alignSelf: 'center', marginBottom: 8 }} />
       <Text style={styles.title}>프로필 설정</Text>
       <Text style={styles.subtitle}>AI 코치가 맞춤 분석을 위해 필요해요</Text>
 
@@ -97,7 +98,7 @@ export default function ProfileSetupScreen() {
                 style={[styles.goalCard, primaryGoal === opt.value && styles.optionCardActive]}
                 onPress={() => setPrimaryGoal(opt.value)}
               >
-                <Text style={styles.goalIcon}>{opt.icon}</Text>
+                <Ionicons name={opt.icon as any} size={24} color={primaryGoal === opt.value ? '#fff' : '#3b82f6'} style={{ marginBottom: 6 }} />
                 <Text style={[styles.optionLabel, primaryGoal === opt.value && styles.optionLabelActive]}>
                   {opt.label}
                 </Text>
@@ -151,7 +152,7 @@ export default function ProfileSetupScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   content: { flexGrow: 1, padding: 24, paddingBottom: 48 },
-  logo: { fontSize: 48, textAlign: 'center', marginBottom: 8, marginTop: 24 },
+  logo: { marginTop: 24 },
   title: { fontSize: 28, fontWeight: '800', color: '#f8fafc', textAlign: 'center', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#64748b', textAlign: 'center', marginBottom: 24 },
   progress: { flexDirection: 'row', justifyContent: 'center', gap: 8, marginBottom: 32 },
@@ -169,7 +170,6 @@ const styles = StyleSheet.create({
     width: '47%', backgroundColor: '#1e293b', borderRadius: 12, padding: 16,
     alignItems: 'center', borderWidth: 1, borderColor: '#334155',
   },
-  goalIcon: { fontSize: 28, marginBottom: 6 },
   input: {
     backgroundColor: '#1e293b', borderRadius: 12, padding: 16,
     color: '#f8fafc', fontSize: 22, fontWeight: '700', borderWidth: 1, borderColor: '#334155',

@@ -28,17 +28,22 @@ export async function syncRoutes(app: FastifyInstance) {
   // POST /devices/connect - register a wearable device
   app.post('/devices/connect', { ...authenticate }, async (request, reply) => {
     const userId = (request.user as any).sub
-    const { deviceType, deviceId } = request.body as { deviceType: string; deviceId: string }
+    const { deviceType, deviceId, pushToken } = request.body as {
+      deviceType: string
+      deviceId: string
+      pushToken?: string
+    }
 
     const device = await prisma.connectedDevice.upsert({
       where: { userId_deviceType_deviceId: { userId, deviceType: deviceType as any, deviceId } },
-      update: { isActive: true },
+      update: { isActive: true, ...(pushToken !== undefined && { pushToken }) },
       create: {
         userId,
         deviceType: deviceType as any,
         deviceId,
         accessToken: '',
         refreshToken: '',
+        ...(pushToken !== undefined && { pushToken }),
       },
     })
 

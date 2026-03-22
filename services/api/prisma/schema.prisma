@@ -32,6 +32,7 @@ enum DeviceType {
   polar
   fitbit
   wahoo
+  app_native  // Mobile app (for push notification registration)
 }
 
 enum DataSource {
@@ -129,6 +130,8 @@ model User {
   sentMatches     RunnerMatch[]     @relation("requester")
   receivedMatches RunnerMatch[]     @relation("matched")
   groups          GroupMember[]
+  sentMessages    Message[]
+  resetTokens     PasswordResetToken[]
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -144,6 +147,7 @@ model ConnectedDevice {
   deviceId     String
   accessToken  String     // encrypted at app level
   refreshToken String     // encrypted at app level
+  pushToken    String?    // Expo push token
   syncedAt     DateTime?
   isActive     Boolean    @default(true)
 
@@ -202,14 +206,34 @@ model Run {
   notes    String?
 
   // Relations
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  splits   RunSplit[]
-  insights CoachingInsight[]
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  splits     RunSplit[]
+  insights   CoachingInsight[]
+  datapoints RunDatapoint[]
 
   createdAt DateTime @default(now())
 
   @@index([userId, startedAt(sort: Desc)])
   @@index([startedAt])
+}
+
+model RunDatapoint {
+  id        String  @id @default(uuid())
+  runId     String
+  timestamp DateTime
+
+  lat        Float?
+  lng        Float?
+  altitudeM  Float?
+
+  heartRate     Int?
+  paceSecPerKm  Float?
+  cadenceSpm    Int?
+  powerWatts    Float?
+
+  run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@index([runId])
 }
 
 model RunSplit {
@@ -327,6 +351,7 @@ model RunnerMatch {
 
   requester   User @relation("requester", fields: [requesterId], references: [id], onDelete: Cascade)
   matchedUser User @relation("matched", fields: [matchedUserId], references: [id], onDelete: Cascade)
+  messages    Message[]
 
   matchedAt   DateTime  @default(now())
   respondedAt DateTime?
@@ -363,4 +388,35 @@ model GroupMember {
   group RunnerGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@id([userId, groupId])
+}
+
+// ─── Messaging ─────────────────────────────────────────────────────────────
+
+model Message {
+  id        String    @id @default(uuid())
+  matchId   String
+  senderId  String
+  content   String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  match  RunnerMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  sender User        @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, createdAt(sort: Desc)])
+}
+
+// ─── Password Reset ─────────────────────────────────────────────────────────
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique  // 6자리 숫자 코드
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
 }

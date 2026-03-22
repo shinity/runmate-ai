@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, Alert, ScrollView,
 } from 'react-native'
 import { Link } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../../stores/auth'
 
 export default function RegisterScreen() {
@@ -37,7 +38,7 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-        <Text style={styles.logo}>🏃</Text>
+        <Ionicons name="body" size={64} color="#3b82f6" style={{ textAlign: 'center', marginBottom: 8 }} />
         <Text style={styles.title}>회원가입</Text>
         <Text style={styles.subtitle}>RunMate AI와 함께 시작하세요</Text>
 
@@ -104,7 +105,6 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f172a' },
   inner: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  logo: { fontSize: 56, textAlign: 'center', marginBottom: 8 },
   title: { fontSize: 32, fontWeight: '800', color: '#f8fafc', textAlign: 'center', marginBottom: 4 },
   subtitle: { fontSize: 15, color: '#64748b', textAlign: 'center', marginBottom: 40 },
   form: { gap: 8 },

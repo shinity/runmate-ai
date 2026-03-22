@@ -69,4 +69,68 @@ export async function authRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: { code: 'INVALID_TOKEN', message: 'Invalid refresh token' } })
     }
   })
+
+  app.post('/forgot-password', async (request, reply) => {
+    const body = z.object({ email: z.string().email() }).parse(request.body)
+
+    const user = await prisma.user.findUnique({ where: { email: body.email } })
+    if (!user) {
+      // 이메일 존재 여부를 노출하지 않기 위해 동일한 응답 반환
+      return reply.send({ data: { message: '코드가 발송되었습니다' } })
+    }
+
+    // 기존 미사용 토큰 무효화
+    await prisma.passwordResetToken.updateMany({
+      where: { userId: user.id, usedAt: null },
+      data: { usedAt: new Date() },
+    })
+
+    // 6자리 랜덤 숫자 코드 생성
+    const code = Math.floor(100000 + Math.random() * 900000).toString()
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000) // 15분 후
+
+    await prisma.passwordResetToken.create({
+      data: { userId: user.id, token: code, expiresAt },
+    })
+
+    // MVP: 코드를 응답에 직접 포함 (추후 이메일 발송으로 교체)
+    return reply.send({ data: { message: '코드가 발송되었습니다', code } })
+  })
+
+  app.post('/reset-password', async (request, reply) => {
+    const body = z
+      .object({
+        email: z.string().email(),
+        code: z.string().length(6),
+        newPassword: z.string().min(8),
+      })
+      .parse(request.body)
+
+    const user = await prisma.user.findUnique({ where: { email: body.email } })
+    if (!user) {
+      return reply.code(400).send({ error: { code: 'INVALID_CODE', message: '유효하지 않은 코드입니다' } })
+    }
+
+    const resetToken = await prisma.passwordResetToken.findFirst({
+      where: {
+        userId: user.id,
+        token: body.code,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    })
+
+    if (!resetToken) {
+      return reply.code(400).send({ error: { code: 'INVALID_CODE', message: '유효하지 않은 코드입니다' } })
+    }
+
+    const passwordHash = await bcrypt.hash(body.newPassword, 12)
+
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
+      prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
+    ])
+
+    return reply.send({ data: { message: '비밀번호가 변경되었습니다' } })
+  })
 }

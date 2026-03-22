@@ -52,6 +52,20 @@ export async function runRoutes(app: FastifyInstance) {
               })),
             }
           : undefined,
+        datapoints: datapoints && datapoints.length > 0
+          ? {
+              create: datapoints.map((d) => ({
+                timestamp: new Date(d.timestamp),
+                lat: d.lat,
+                lng: d.lng,
+                altitudeM: d.altitudeM,
+                heartRate: d.heartRate,
+                paceSecPerKm: d.paceSecPerKm,
+                cadenceSpm: d.cadenceSpm,
+                powerWatts: d.powerWatts,
+              })),
+            }
+          : undefined,
       },
       include: { splits: true },
     })

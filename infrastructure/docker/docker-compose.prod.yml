@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-runmate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-runmate}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-runmate}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # 외부 노출 안 함 (내부 네트워크만)
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api:
+    image: ghcr.io/${GHCR_OWNER}/runmate-api:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-runmate}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-runmate}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      AI_PIPELINE_URL: http://ai-pipeline:8000
+      AI_PIPELINE_SECRET: ${AI_PIPELINE_SECRET}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/services/api/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ai-pipeline:
+    build:
+      context: ../../services/ai-pipeline
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      AI_PIPELINE_SECRET: ${AI_PIPELINE_SECRET}
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  postgres_data:
+  redis_data:
+  uploads:

@@ -24,6 +24,8 @@
     "@fastify/rate-limit": "^10.2.1",
     "@fastify/swagger": "^9.4.1",
     "@fastify/swagger-ui": "^5.2.1",
+    "@fastify/websocket": "^11.0.2",
+    "@google/generative-ai": "^0.24.1",
     "@prisma/client": "^6.2.1",
     "@runmate/types": "*",
     "@runmate/validators": "*",

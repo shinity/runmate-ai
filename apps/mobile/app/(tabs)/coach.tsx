@@ -3,6 +3,7 @@ import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator,
   Modal, TextInput, Alert,
 } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useCoachingPlans, useCoachingInsights, useMarkInsightRead, useGeneratePlan } from '../../hooks/useCoaching'
 import type { CoachingInsight, CoachingPlan } from '@runmate/types'
 
@@ -81,18 +82,18 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 const TYPE_ICONS: Record<string, string> = {
-  recovery_advice: '🛌',
-  performance_analysis: '📊',
-  habit_pattern: '📅',
-  injury_risk_alert: '⚠️',
-  motivation: '🔥',
-  plan_adjustment: '🔄',
+  recovery_advice: 'bulb',
+  performance_analysis: 'bar-chart',
+  habit_pattern: 'leaf',
+  injury_risk_alert: 'warning',
+  motivation: 'flame',
+  plan_adjustment: 'calendar',
 }
 
 function InsightCard({ insight }: { insight: CoachingInsight }) {
   const markRead = useMarkInsightRead()
   const priorityColor = PRIORITY_COLORS[insight.priority] ?? '#3b82f6'
-  const icon = TYPE_ICONS[insight.type] ?? '💡'
+  const icon = TYPE_ICONS[insight.type] ?? 'bulb'
 
   return (
     <TouchableOpacity
@@ -104,7 +105,7 @@ function InsightCard({ insight }: { insight: CoachingInsight }) {
       onPress={() => !insight.readAt && markRead.mutate(insight.id)}
     >
       <View style={styles.insightHeader}>
-        <Text style={styles.insightIcon}>{icon}</Text>
+        <Ionicons name={icon as any} size={20} color="#3b82f6" />
         <View style={styles.insightMeta}>
           <Text style={[styles.insightPriority, { color: priorityColor }]}>
             {insight.priority.toUpperCase()}
@@ -163,7 +164,7 @@ function GeneratePlanModal({ visible, onClose }: { visible: boolean; onClose: ()
         currentFitnessLevel: 'moderate',
       })
       onClose()
-      Alert.alert('완료', 'AI가 훈련 계획을 생성했습니다! 🎯')
+      Alert.alert('완료', 'AI가 훈련 계획을 생성했습니다!')
     } catch (e: any) {
       Alert.alert('오류', e.message ?? '계획 생성에 실패했습니다.')
     }
@@ -259,7 +260,7 @@ export default function CoachScreen() {
         </TouchableOpacity>
       ) : (
         <TouchableOpacity style={styles.generatePlanBtn} onPress={() => setShowModal(true)}>
-          <Text style={styles.generatePlanIcon}>🎯</Text>
+          <Ionicons name="flag" size={48} color="#3b82f6" style={{ marginRight: 12 }} />
           <View>
             <Text style={styles.generatePlanTitle}>훈련 계획 생성하기</Text>
             <Text style={styles.generatePlanSub}>AI가 맞춤 훈련 계획을 만들어드려요</Text>
@@ -308,7 +309,6 @@ const styles = StyleSheet.create({
     borderColor: '#334155',
     borderStyle: 'dashed',
   },
-  generatePlanIcon: { fontSize: 32, marginRight: 12 },
   generatePlanTitle: { color: '#f8fafc', fontWeight: '700', fontSize: 16 },
   generatePlanSub: { color: '#64748b', fontSize: 13, marginTop: 2 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#f8fafc', marginBottom: 12 },
@@ -321,7 +321,6 @@ const styles = StyleSheet.create({
   },
   insightCardUnread: { backgroundColor: '#1e2d45' },
   insightHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  insightIcon: { fontSize: 20 },
   insightMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   insightPriority: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
   unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#3b82f6' },

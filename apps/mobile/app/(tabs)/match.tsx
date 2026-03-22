@@ -1,6 +1,8 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../lib/api'
 import { formatPace } from '../../lib/format'
 import type { MatchSuggestion } from '@runmate/types'
@@ -28,7 +30,7 @@ function SuggestionCard({ suggestion }: { suggestion: MatchSuggestion }) {
         </View>
       </View>
       <View style={styles.runStats}>
-        <Text style={styles.statChip}>🏃 {formatPace(suggestion.matchProfile.avgPaceSecPerKm)}/km</Text>
+        <Text style={styles.statChip}>{formatPace(suggestion.matchProfile.avgPaceSecPerKm)}/km</Text>
         <Text style={styles.statChip}>📅 {suggestion.matchProfile.avgWeeklyKm.toFixed(0)}km/주</Text>
         <Text style={styles.statChip}>
           {suggestion.matchProfile.preferredRunTime === 'morning' ? '🌅 아침' :
@@ -111,6 +113,7 @@ function RequestsTab() {
 }
 
 function ActiveMatchesTab() {
+  const router = useRouter()
   const { data: matches, isLoading } = useQuery({
     queryKey: ['match', 'active'],
     queryFn: async () => {
@@ -124,7 +127,7 @@ function ActiveMatchesTab() {
   if (!matches?.length) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyIcon}>🤝</Text>
+        <Ionicons name="people" size={64} color="#334155" />
         <Text style={styles.emptyText}>아직 활성 매칭이 없어요{'\n'}추천 탭에서 러닝메이트를 찾아보세요</Text>
       </View>
     )
@@ -144,6 +147,12 @@ function ActiveMatchesTab() {
                 <Text style={styles.cardName}>{partner?.displayName ?? '러너'}</Text>
                 <Text style={[styles.cardSub, { color: '#4ade80' }]}>✓ 매칭 완료</Text>
               </View>
+              <TouchableOpacity
+                style={styles.chatBtn}
+                onPress={() => router.push(`/chat/${m.id}` as any)}
+              >
+                <Text style={styles.chatBtnText}>채팅</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )
@@ -233,4 +242,6 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center', marginTop: 60 },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyText: { color: '#64748b', fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  chatBtn: { backgroundColor: '#3b82f6', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8 },
+  chatBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 })

@@ -4,9 +4,11 @@ import {
   Alert, ScrollView, ActivityIndicator,
 } from 'react-native'
 import * as Location from 'expo-location'
+import { Ionicons } from '@expo/vector-icons'
 import { useRunStore } from '../../stores/run'
 import { useCreateRun, useRuns } from '../../hooks/useRuns'
 import { formatPace, formatDistance, formatDuration } from '../../lib/format'
+import RunDetailModal from '../../components/RunDetailModal'
 
 interface RunSummary {
   startedAt: string
@@ -24,6 +26,7 @@ export default function RunScreen() {
   const [tab, setTab] = useState<'active' | 'history'>('active')
   const [summary, setSummary] = useState<RunSummary | null>(null)
   const [effortScore, setEffortScore] = useState(5)
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const locationSubRef = useRef<Location.LocationSubscription | null>(null)
 
@@ -123,7 +126,7 @@ export default function RunScreen() {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.summaryContent}>
         <Text style={styles.summaryTitle}>런 완료!</Text>
-        <Text style={styles.summaryEmoji}>🎉</Text>
+        <Ionicons name="trophy" size={64} color="#facc15" style={{ textAlign: 'center', marginVertical: 16 }} />
 
         <View style={styles.summaryMetrics}>
           <View style={styles.summaryMetric}>
@@ -228,7 +231,7 @@ export default function RunScreen() {
 
           {!isRunning ? (
             <TouchableOpacity style={styles.startBtn} onPress={handleStart}>
-              <Text style={styles.startBtnText}>🏃 시작</Text>
+              <Text style={styles.startBtnText}>시작</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.controls}>
@@ -248,7 +251,7 @@ export default function RunScreen() {
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>🏃</Text>
+              <Ionicons name="walk" size={64} color="#334155" />
               <Text style={styles.emptyText}>아직 기록이 없어요</Text>
               <TouchableOpacity onPress={() => setTab('active')}>
                 <Text style={styles.emptyAction}>활성 런 탭에서 시작하기 →</Text>
@@ -256,22 +259,34 @@ export default function RunScreen() {
             </View>
           }
           renderItem={({ item }) => (
-            <View style={styles.runCard}>
-              <View style={styles.runCardHeader}>
-                <Text style={styles.runTitle}>{item.title ?? '런'}</Text>
-                <Text style={styles.runDate}>
-                  {new Date(item.startedAt).toLocaleDateString('ko-KR')}
-                </Text>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => setSelectedRunId(item.id)}
+            >
+              <View style={styles.runCard}>
+                <View style={styles.runCardHeader}>
+                  <Text style={styles.runTitle}>{item.title ?? '런'}</Text>
+                  <Text style={styles.runDate}>
+                    {new Date(item.startedAt).toLocaleDateString('ko-KR')}
+                  </Text>
+                </View>
+                <View style={styles.runStats}>
+                  <Text style={styles.runStat}>{formatDistance(item.distanceMeters)}</Text>
+                  <Text style={styles.runStatDivider}>·</Text>
+                  <Text style={styles.runStat}>{formatPace(item.avgPaceSecPerKm)}/km</Text>
+                  <Text style={styles.runStatDivider}>·</Text>
+                  <Text style={styles.runStat}>{formatDuration(item.durationSeconds)}</Text>
+                </View>
               </View>
-              <View style={styles.runStats}>
-                <Text style={styles.runStat}>{formatDistance(item.distanceMeters)}</Text>
-                <Text style={styles.runStatDivider}>·</Text>
-                <Text style={styles.runStat}>{formatPace(item.avgPaceSecPerKm)}/km</Text>
-                <Text style={styles.runStatDivider}>·</Text>
-                <Text style={styles.runStat}>{formatDuration(item.durationSeconds)}</Text>
-              </View>
-            </View>
+            </TouchableOpacity>
           )}
+        />
+      )}
+
+      {selectedRunId && (
+        <RunDetailModal
+          runId={selectedRunId}
+          onClose={() => setSelectedRunId(null)}
         />
       )}
     </View>
@@ -300,7 +315,7 @@ const styles = StyleSheet.create({
   stopBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   listContent: { padding: 16 },
   empty: { alignItems: 'center', marginTop: 80 },
-  emptyIcon: { fontSize: 48, marginBottom: 12 },
+  emptyIcon: { marginBottom: 12 },
   emptyText: { color: '#64748b', fontSize: 16, marginBottom: 12 },
   emptyAction: { color: '#3b82f6', fontSize: 15, fontWeight: '600' },
   runCard: { backgroundColor: '#1e293b', borderRadius: 16, padding: 16, marginBottom: 12 },
@@ -313,7 +328,6 @@ const styles = StyleSheet.create({
   // Summary styles
   summaryContent: { flexGrow: 1, padding: 24, paddingBottom: 48, alignItems: 'center' },
   summaryTitle: { fontSize: 28, fontWeight: '800', color: '#f8fafc', marginTop: 24 },
-  summaryEmoji: { fontSize: 64, marginVertical: 16 },
   summaryMetrics: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', backgroundColor: '#1e293b', borderRadius: 20, padding: 24, marginBottom: 24 },
   summaryMetric: { alignItems: 'center' },
   summaryMetricValue: { fontSize: 22, fontWeight: '800', color: '#f8fafc' },
