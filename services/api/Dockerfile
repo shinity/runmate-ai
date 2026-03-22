@@ -24,6 +24,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY packages/types ./packages/types
 COPY packages/validators ./packages/validators
 COPY services/api ./services/api
+# 워크스페이스 패키지 먼저 빌드
+RUN cd /app/packages/types && npm run build 2>/dev/null || npx tsc
+RUN cd /app/packages/validators && npm run build 2>/dev/null || npx tsc
 WORKDIR /app/services/api
 RUN npx prisma generate && npm run build
 
