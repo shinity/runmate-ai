@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    "react-native-health",
+    "react-native-health-connect"
+  ],
+  "ios": {
+    "bundleIdentifier": "com.anonymous.runmate-ai"
+  }
+}

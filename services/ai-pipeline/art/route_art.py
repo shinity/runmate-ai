@@ -1,73 +1,128 @@
-import os
+import io
 import math
-import httpx
+import base64
 from typing import Optional
 
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
-REPLICATE_API_URL = "https://api.replicate.com/v1/predictions"
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # headless (no display)
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 
-def pace_to_color(avg_pace_sec: Optional[int]) -> str:
-    """Map pace to a color for the art prompt."""
-    if avg_pace_sec is None:
-        return "golden"
-    if avg_pace_sec < 240:   # < 4:00/km — elite
-        return "electric blue"
-    elif avg_pace_sec < 300: # < 5:00/km — fast
-        return "vivid orange"
-    elif avg_pace_sec < 360: # < 6:00/km — moderate
-        return "warm amber"
-    elif avg_pace_sec < 420: # < 7:00/km — easy
-        return "soft green"
-    else:                    # relaxed
-        return "gentle purple"
+# ─── Helpers ───────────────────────────────────────────────────────────────
+
+def pace_to_color_value(pace_sec: Optional[float]) -> float:
+    """pace → 0.0(slow) ~ 1.0(fast) 정규화"""
+    if pace_sec is None:
+        return 0.5
+    clamped = max(240, min(480, pace_sec))
+    return 1.0 - (clamped - 240) / 240
 
 
-def normalize_route(datapoints: list[dict]) -> list[tuple[float, float]]:
-    """Normalize GPS coordinates to a 0-1 canvas."""
-    if not datapoints:
-        return []
+def normalize_coords(datapoints: list[dict]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """위경도 + 고도를 x, y, z, pace 배열로 변환"""
+    lats = np.array([p.get('lat') or 0.0 for p in datapoints])
+    lngs = np.array([p.get('lng') or 0.0 for p in datapoints])
+    alts = np.array([p.get('altitude_m') or 0.0 for p in datapoints])
+    paces = np.array([p.get('pace_sec_per_km') for p in datapoints], dtype=object)
 
-    lats = [p["lat"] for p in datapoints if p.get("lat") is not None]
-    lngs = [p["lng"] for p in datapoints if p.get("lng") is not None]
+    # 위경도 → 미터 단위 근사 변환
+    lat_center = np.mean(lats)
+    x = (lngs - np.mean(lngs)) * math.cos(math.radians(lat_center)) * 111320
+    y = (lats - np.mean(lats)) * 111320
+    z = alts - np.min(alts)  # 최저점 기준 상대 고도
 
-    if not lats or not lngs:
-        return []
-
-    min_lat, max_lat = min(lats), max(lats)
-    min_lng, max_lng = min(lngs), max(lngs)
-
-    lat_range = max_lat - min_lat or 1
-    lng_range = max_lng - min_lng or 1
-
-    return [
-        (
-            (p["lng"] - min_lng) / lng_range,
-            1 - (p["lat"] - min_lat) / lat_range,  # flip y axis
-        )
-        for p in datapoints
-        if p.get("lat") is not None and p.get("lng") is not None
-    ]
+    colors = np.array([pace_to_color_value(p) for p in paces])
+    return x, y, z, colors
 
 
-def build_art_prompt(
-    city: Optional[str],
-    weather_condition: Optional[str],
-    pace_color: str,
-    route_shape: str,
-) -> str:
-    location_desc = f"through {city}" if city else "through a city"
-    weather_desc = weather_condition or "clear"
+def has_gps(datapoints: list[dict]) -> bool:
+    return any(p.get('lat') and p.get('lng') for p in datapoints)
 
-    return (
-        f"An abstract watercolor painting of a running route {location_desc}. "
-        f"The route path glows {pace_color}, painted as flowing brushstrokes on textured paper. "
-        f"The background suggests a {weather_desc} day with soft washes of color. "
-        f"Minimalist, artistic, no text, no people, birds-eye view. "
-        f"The route shape is: {route_shape}. "
-        f"Style: impressionistic watercolor, high contrast route, muted background."
-    )
 
+def has_altitude(datapoints: list[dict]) -> bool:
+    alts = [p.get('altitude_m') for p in datapoints if p.get('altitude_m') is not None]
+    return len(alts) > 0 and (max(alts) - min(alts)) > 5
+
+
+# ─── 3D 렌더링 ──────────────────────────────────────────────────────────────
+
+def render_3d(x, y, z, colors) -> bytes:
+    fig = plt.figure(figsize=(8, 8), facecolor='#0a0a0a')
+    ax = fig.add_subplot(111, projection='3d', facecolor='#0a0a0a')
+
+    points = np.array([x, y, z]).T.reshape(-1, 1, 3)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+    lc = Line3DCollection(segments, cmap='plasma', linewidth=2.5, alpha=0.9)
+    lc.set_array(colors[:-1])
+    ax.add_collection3d(lc)
+
+    ax.scatter([x[0]], [y[0]], [z[0]], color='#00ff88', s=80, zorder=5)
+    ax.scatter([x[-1]], [y[-1]], [z[-1]], color='#ff4455', s=80, zorder=5)
+
+    z_floor = np.min(z) - (np.max(z) - np.min(z)) * 0.1
+    ax.plot(x, y, z_floor, color='#ffffff', alpha=0.15, linewidth=1)
+
+    ax.set_xlim(x.min(), x.max())
+    ax.set_ylim(y.min(), y.max())
+    ax.set_zlim(z_floor, z.max() * 1.1 + 1)
+
+    for pane in [ax.xaxis.pane, ax.yaxis.pane, ax.zaxis.pane]:
+        pane.fill = False
+        pane.set_edgecolor('#333333')
+
+    ax.tick_params(colors='#444444')
+    ax.grid(True, color='#222222', linewidth=0.5)
+    ax.view_init(elev=25, azim=-60)
+    ax.set_xlabel('')
+    ax.set_ylabel('')
+    ax.set_zlabel('고도 (m)', color='#888888', fontsize=8)
+
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight',
+                facecolor='#0a0a0a', edgecolor='none')
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+
+
+# ─── 2D 폴백 (고도 데이터 없을 때) ───────────────────────────────────────────
+
+def render_2d(x, y, colors) -> bytes:
+    fig, ax = plt.subplots(figsize=(8, 8), facecolor='#0a0a0a')
+    ax.set_facecolor('#0a0a0a')
+
+    points = np.array([x, y]).T.reshape(-1, 1, 2)
+    segments = np.concatenate([points[:-1], points[1:]], axis=1)
+
+    lc = LineCollection(segments, cmap='plasma', linewidth=3, alpha=0.9)
+    lc.set_array(colors[:-1])
+    ax.add_collection(lc)
+
+    ax.scatter(x[0], y[0], color='#00ff88', s=80, zorder=5)
+    ax.scatter(x[-1], y[-1], color='#ff4455', s=80, zorder=5)
+
+    margin_x = abs(x.max() - x.min()) * 0.1 or 1
+    margin_y = abs(y.max() - y.min()) * 0.1 or 1
+    ax.set_xlim(x.min() - margin_x, x.max() + margin_x)
+    ax.set_ylim(y.min() - margin_y, y.max() + margin_y)
+    ax.set_aspect('equal')
+    ax.axis('off')
+
+    plt.tight_layout()
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight',
+                facecolor='#0a0a0a', edgecolor='none')
+    plt.close(fig)
+    buf.seek(0)
+    return buf.read()
+
+
+# ─── 메인 ───────────────────────────────────────────────────────────────────
 
 async def generate_route_art(
     run_id: str,
@@ -76,60 +131,21 @@ async def generate_route_art(
     weather_condition: Optional[str] = None,
     avg_pace_sec_per_km: Optional[int] = None,
 ) -> dict:
-    if not REPLICATE_API_TOKEN:
-        return {"status": "skipped", "reason": "REPLICATE_API_TOKEN not configured"}
+    if not datapoints or not has_gps(datapoints):
+        return {'status': 'skipped', 'reason': 'no_gps_data'}
 
-    pace_color = pace_to_color(avg_pace_sec_per_km)
+    x, y, z, colors = normalize_coords(datapoints)
 
-    # Describe route shape from normalized coordinates
-    normalized = normalize_route(datapoints)
-    if len(normalized) > 10:
-        # Sample every Nth point to describe shape
-        step = max(1, len(normalized) // 10)
-        sampled = normalized[::step]
-        shape_desc = f"a path with {len(normalized)} points, roughly {'circular' if _is_circular(normalized) else 'linear'}"
-    else:
-        shape_desc = "a short running path"
+    if len(x) < 2:
+        return {'status': 'skipped', 'reason': 'insufficient_datapoints'}
 
-    prompt = build_art_prompt(city, weather_condition, pace_color, shape_desc)
+    use_3d = has_altitude(datapoints)
+    image_bytes = render_3d(x, y, z, colors) if use_3d else render_2d(x, y, colors)
 
-    async with httpx.AsyncClient() as http:
-        response = await http.post(
-            REPLICATE_API_URL,
-            headers={
-                "Authorization": f"Token {REPLICATE_API_TOKEN}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "version": "7762fd07cf82c948538e41f4b9bfc9bf46c7f516c6f08c3f0f0e4b0b5d7b3c4",  # SDXL
-                "input": {
-                    "prompt": prompt,
-                    "width": 1024,
-                    "height": 1024,
-                    "num_inference_steps": 30,
-                    "guidance_scale": 7.5,
-                },
-                "webhook": f"{os.getenv('API_BASE_URL', '')}/api/v1/art/webhook",
-                "webhook_events_filter": ["completed"],
-            },
-            timeout=30,
-        )
-
-    if response.status_code not in (200, 201):
-        return {"status": "error", "reason": response.text}
-
-    prediction = response.json()
     return {
-        "status": "queued",
-        "predictionId": prediction.get("id"),
-        "runId": run_id,
+        'status': 'completed',
+        'run_id': run_id,
+        'render_mode': '3d' if use_3d else '2d',
+        'image_b64': base64.b64encode(image_bytes).decode('utf-8'),
+        'mime_type': 'image/png',
     }
-
-
-def _is_circular(points: list[tuple[float, float]]) -> bool:
-    """Heuristic: route is circular if start and end are close."""
-    if len(points) < 5:
-        return False
-    start, end = points[0], points[-1]
-    dist = math.sqrt((start[0] - end[0]) ** 2 + (start[1] - end[1]) ** 2)
-    return dist < 0.15

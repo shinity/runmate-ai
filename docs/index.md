@@ -14,9 +14,13 @@
 
 | 파일 | 설명 |
 |------|------|
+| [current-status.md](./current-status.md) | **현재 구현 현황** — 백엔드/모바일/인프라 완료 내용 |
+| [roadmap.md](./roadmap.md) | **로드맵 및 할 일** — 진행 중/예정/백로그 |
 | [product-overview.md](./product-overview.md) | 서비스 개요, 핵심 기능, 개발 단계 |
 | [tech-stack.md](./tech-stack.md) | 기술 스택 상세 설명 |
 | [api-reference.md](./api-reference.md) | REST API 엔드포인트 전체 레퍼런스 |
 | [user-flow.md](./user-flow.md) | 주요 유저 플로우 및 시나리오 |
+| [user-scenarios.md](./user-scenarios.md) | 페르소나 기반 유저 시나리오 (8개) |
 | [data-domain.md](./data-domain.md) | 데이터 도메인 구조 및 설계 결정 |
 | [erd.md](./erd.md) | 엔티티 관계 다이어그램 (Mermaid) |
+| [docker-guide.md](./docker-guide.md) | Docker 개발 환경 구성 및 운영 가이드 |

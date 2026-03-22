@@ -1,10 +1,13 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
+import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useWeeklyStats } from '../../hooks/useRuns'
 import { useRecoveryStatus, useCoachingInsights } from '../../hooks/useCoaching'
 import { useAuthStore } from '../../stores/auth'
 import { formatPace, formatDistance } from '../../lib/format'
 
 export default function HomeScreen() {
+  const router = useRouter()
   const user = useAuthStore((s) => s.user)
   const { data: stats } = useWeeklyStats()
   const { data: recovery } = useRecoveryStatus()
@@ -78,8 +81,8 @@ export default function HomeScreen() {
 
       {/* AI Insights Banner */}
       {unreadInsights > 0 && (
-        <TouchableOpacity style={styles.insightBanner}>
-          <Text style={styles.insightBannerIcon}>⚡</Text>
+        <TouchableOpacity style={styles.insightBanner} onPress={() => router.push('/(tabs)/coach')}>
+          <Ionicons name="flash" size={20} color="#facc15" style={{ marginRight: 12 }} />
           <View>
             <Text style={styles.insightBannerTitle}>새 코칭 인사이트 {unreadInsights}개</Text>
             <Text style={styles.insightBannerSub}>AI 코치 탭에서 확인하세요</Text>
@@ -88,8 +91,11 @@ export default function HomeScreen() {
       )}
 
       {/* Quick Action */}
-      <TouchableOpacity style={styles.startRunButton}>
-        <Text style={styles.startRunButtonText}>🏃 런 시작하기</Text>
+      <TouchableOpacity style={styles.startRunButton} onPress={() => router.navigate('/(tabs)/run')}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Ionicons name="walk" size={22} color="#fff" />
+          <Text style={styles.startRunButtonText}>런 시작하기</Text>
+        </View>
       </TouchableOpacity>
     </ScrollView>
   )
@@ -136,7 +142,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#3b82f6',
   },
-  insightBannerIcon: { fontSize: 24, marginRight: 12 },
   insightBannerTitle: { color: '#93c5fd', fontWeight: '700', fontSize: 15 },
   insightBannerSub: { color: '#64748b', fontSize: 13, marginTop: 2 },
   startRunButton: {

@@ -6,6 +6,7 @@ const redisConnection = {
 import { prisma } from '../lib/prisma'
 import { RunAnalysisJob } from '../lib/queue'
 import { analyzeRunWithClaude } from './claude'
+import { sendToUser } from '../lib/push'
 
 export function startRunAnalysisWorker() {
   const worker = new Worker<RunAnalysisJob, void, string>(
@@ -61,7 +62,7 @@ export function startRunAnalysisWorker() {
       })
 
       // 6. Save insight
-      await prisma.coachingInsight.create({
+      const savedInsight = await prisma.coachingInsight.create({
         data: {
           userId,
           runId,
@@ -74,7 +75,15 @@ export function startRunAnalysisWorker() {
         },
       })
 
-      // 7. Update match profile (async, non-blocking)
+      // 7. Send push notification for new insight (non-blocking)
+      sendToUser(userId, {
+        title: 'AI 코칭 인사이트',
+        body: savedInsight.content.slice(0, 100),
+        data: { type: 'insight', insightId: savedInsight.id },
+        sound: 'default',
+      }).catch((err) => console.error('[RunAnalysis] Push notification failed:', err))
+
+      // 8. Update match profile (async, non-blocking)
       await updateMatchProfile(userId, historicalRuns, run)
 
       console.log(`[RunAnalysis] Done for run ${runId}`)
