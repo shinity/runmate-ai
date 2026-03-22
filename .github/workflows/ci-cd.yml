@@ -130,9 +130,7 @@ jobs:
       - name: Setup Tailscale
         uses: tailscale/github-action@v2
         with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
-          tags: tag:ci
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
 
       - name: Deploy to NAS
         uses: appleboy/ssh-action@v1
@@ -140,7 +138,7 @@ jobs:
           host: ${{ secrets.NAS_TAILSCALE_IP }}
           username: ${{ secrets.NAS_SSH_USER }}
           key: ${{ secrets.NAS_SSH_KEY }}
-          port: 22
+          port: ${{ secrets.NAS_SSH_PORT }}
           script: |
             set -e
             cd ${{ secrets.NAS_PROJECT_PATH }}
