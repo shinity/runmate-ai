@@ -52,6 +52,11 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Build workspace packages
+        run: |
+          npm run build --workspace=packages/types
+          npm run build --workspace=packages/validators
+
       - name: Generate Prisma Client
         working-directory: services/api
         env:
