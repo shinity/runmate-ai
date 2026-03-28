@@ -89,6 +89,24 @@ async function bootstrap() {
   serverAdapter.setBasePath('/admin/queues')
   await app.register(serverAdapter.registerPlugin(), { prefix: '/admin/queues' })
 
+  // ─── Error handler ────────────────────────────────────────────────────────
+  app.setErrorHandler((err: any, _request, reply) => {
+    if (err.name === 'ZodError' || Array.isArray(err.issues)) {
+      return reply.code(400).send({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid request', details: err.issues },
+      })
+    }
+    if (err.statusCode === 429) {
+      return reply.code(429).send({
+        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests' },
+      })
+    }
+    app.log.error(err)
+    return reply.code(err.statusCode ?? 500).send({
+      error: { code: 'INTERNAL_ERROR', message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message },
+    })
+  })
+
   // ─── Auth decorator ────────────────────────────────────────────────────────
   app.decorate('authenticate', async (request: any, reply: any) => {
     try {
