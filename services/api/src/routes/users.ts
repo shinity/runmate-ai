@@ -1,8 +1,8 @@
-import { FastifyInstance } from 'fastify'
+import type { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { UpdateUserSchema } from '@runmate/validators'
 
-export async function userRoutes(app: FastifyInstance) {
+export const userRoutes = async (app: FastifyInstance) => {
   const authenticate = { preHandler: [app.authenticate] }
 
   // GET /users/me

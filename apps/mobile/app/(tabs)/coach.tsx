@@ -20,7 +20,7 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
 function PlanDetailModal({ plan, onClose }: { plan: CoachingPlan; onClose: () => void }) {
-  const weeks: any[] = (plan as any).weeks ?? []
+  const weeks = plan.weeks ?? []
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet">
@@ -114,9 +114,9 @@ function InsightCard({ insight }: { insight: CoachingInsight }) {
         </View>
       </View>
       <Text style={styles.insightContent}>{insight.content}</Text>
-      {insight.actionItems?.length > 0 && (
+      {(insight.actionItems?.length ?? 0) > 0 && (
         <View style={styles.actionItems}>
-          {(insight.actionItems as string[]).map((item, i) => (
+          {(insight.actionItems ?? []).map((item, i) => (
             <Text key={i} style={styles.actionItem}>• {item}</Text>
           ))}
         </View>

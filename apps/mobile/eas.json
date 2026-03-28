@@ -1,0 +1,36 @@
+{
+  "cli": {
+    "version": ">= 14.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1"
+      }
+    },
+    "preview": {
+      "config": "preview.yml",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

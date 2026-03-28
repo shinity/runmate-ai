@@ -1,8 +1,12 @@
 import { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '../lib/prisma'
-import { LoginSchema, RegisterSchema } from '@runmate/validators'
+import { LoginSchema, RegisterSchema, GoogleAuthSchema } from '@runmate/validators'
+import { sendPasswordResetEmail } from '../lib/email'
+
+const googleClient = new OAuth2Client()
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/register', async (request, reply) => {
@@ -37,6 +41,10 @@ export async function authRoutes(app: FastifyInstance) {
     const user = await prisma.user.findUnique({ where: { email: body.email } })
     if (!user) {
       return reply.code(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' } })
+    }
+
+    if (!user.passwordHash) {
+      return reply.code(401).send({ error: { code: 'OAUTH_ACCOUNT', message: 'This account uses Google login. Please sign in with Google.' } })
     }
 
     const valid = await bcrypt.compare(body.password, user.passwordHash)
@@ -93,8 +101,70 @@ export async function authRoutes(app: FastifyInstance) {
       data: { userId: user.id, token: code, expiresAt },
     })
 
-    // MVP: 코드를 응답에 직접 포함 (추후 이메일 발송으로 교체)
-    return reply.send({ data: { message: '코드가 발송되었습니다', code } })
+    await sendPasswordResetEmail(user.email, code)
+
+    return reply.send({ data: { message: '코드가 발송되었습니다' } })
+  })
+
+  app.post('/google', async (request, reply) => {
+    const body = GoogleAuthSchema.parse(request.body)
+
+    const audience = process.env.GOOGLE_WEB_CLIENT_ID
+    if (!audience) {
+      app.log.error('GOOGLE_WEB_CLIENT_ID is not set')
+      return reply.code(500).send({ error: { code: 'INTERNAL_ERROR', message: 'Google OAuth is not configured' } })
+    }
+
+    let payload
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: body.idToken,
+        audience,
+      })
+      payload = ticket.getPayload()
+    } catch (err) {
+      return reply.code(401).send({ error: { code: 'INVALID_ID_TOKEN', message: 'Google ID token verification failed' } })
+    }
+
+    if (!payload || !payload.sub || !payload.email) {
+      return reply.code(401).send({ error: { code: 'INVALID_ID_TOKEN', message: 'Invalid Google token payload' } })
+    }
+
+    const { sub: googleId, email, name, picture } = payload
+
+    // 이미 동일 이메일로 가입된 유저가 있으면 googleId만 연결, 없으면 신규 생성
+    const existingByEmail = await prisma.user.findUnique({ where: { email } })
+
+    let user
+    if (existingByEmail) {
+      user = await prisma.user.update({
+        where: { id: existingByEmail.id },
+        data: {
+          googleId,
+          avatarUrl: existingByEmail.avatarUrl ?? picture ?? null,
+          lastActiveAt: new Date(),
+        },
+        select: { id: true, email: true, displayName: true, avatarUrl: true, createdAt: true },
+      })
+    } else {
+      user = await prisma.user.create({
+        data: {
+          email,
+          googleId,
+          displayName: name ?? email.split('@')[0],
+          avatarUrl: picture ?? null,
+        },
+        select: { id: true, email: true, displayName: true, avatarUrl: true, createdAt: true },
+      })
+    }
+
+    const accessToken = app.jwt.sign({ sub: user.id, email: user.email })
+    const refreshToken = app.jwt.sign({ sub: user.id, type: 'refresh' }, { expiresIn: '30d' })
+
+    const statusCode = existingByEmail ? 200 : 201
+    return reply.code(statusCode).send({
+      data: { user, tokens: { accessToken, refreshToken, expiresIn: 900 } },
+    })
   })
 
   app.post('/reset-password', async (request, reply) => {

@@ -104,7 +104,7 @@ describe('stopRun', () => {
     act(() => {
       getStore().addDatapoint({ lat: 37.5, lng: 127.0, altitudeM: null, timestamp: new Date().toISOString(), paceSecPerKm: 360 })
     })
-    let returned: ReturnType<typeof getStore.prototype.stopRun>
+    let returned: ReturnType<ReturnType<typeof getStore>['stopRun']>
     act(() => { returned = getStore().stopRun() })
     expect(returned!).toHaveLength(1)
     expect(getStore().isRunning).toBe(false)

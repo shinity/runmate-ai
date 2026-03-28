@@ -60,7 +60,7 @@ export default function RunScreen() {
             lng: loc.coords.longitude,
             altitudeM: loc.coords.altitude,
             timestamp: new Date(loc.timestamp).toISOString(),
-            paceSecPerKm: loc.coords.speed && loc.coords.speed > 0
+            paceSecPerKm: loc.coords.speed && loc.coords.speed > 0.5 && loc.coords.speed < 12
               ? Math.round(1000 / loc.coords.speed)
               : null,
           })

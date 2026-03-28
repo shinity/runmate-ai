@@ -30,6 +30,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       )
       await saveTokens(data.tokens.accessToken, data.tokens.refreshToken)
       set({ user: data.user, isAuthenticated: true })
+    } catch (e) {
+      set({ isAuthenticated: false, user: null })
+      throw e
     } finally {
       set({ isLoading: false })
     }
@@ -44,6 +47,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       )
       await saveTokens(data.tokens.accessToken, data.tokens.refreshToken)
       set({ user: data.user, isAuthenticated: true })
+    } catch (e) {
+      set({ isAuthenticated: false, user: null })
+      throw e
     } finally {
       set({ isLoading: false })
     }

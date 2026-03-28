@@ -5,6 +5,8 @@ import rateLimit from '@fastify/rate-limit'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import websocket from '@fastify/websocket'
+import staticFiles from '@fastify/static'
+import path from 'path'
 import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { FastifyAdapter } from '@bull-board/fastify'
@@ -37,6 +39,13 @@ async function bootstrap() {
   await app.register(cors, {
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? true,
     credentials: true,
+  })
+
+  // Static file serving for route art SVGs
+  const uploadsDir = process.env.UPLOADS_DIR ?? path.join(process.cwd(), 'uploads')
+  await app.register(staticFiles, {
+    root: uploadsDir,
+    prefix: '/uploads/',
   })
 
   await app.register(jwt, {
@@ -79,6 +88,24 @@ async function bootstrap() {
   })
   serverAdapter.setBasePath('/admin/queues')
   await app.register(serverAdapter.registerPlugin(), { prefix: '/admin/queues' })
+
+  // ─── Error handler ────────────────────────────────────────────────────────
+  app.setErrorHandler((err: any, _request, reply) => {
+    if (err.name === 'ZodError' || Array.isArray(err.issues)) {
+      return reply.code(400).send({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid request', details: err.issues },
+      })
+    }
+    if (err.statusCode === 429) {
+      return reply.code(429).send({
+        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests' },
+      })
+    }
+    app.log.error(err)
+    return reply.code(err.statusCode ?? 500).send({
+      error: { code: 'INTERNAL_ERROR', message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message },
+    })
+  })
 
   // ─── Auth decorator ────────────────────────────────────────────────────────
   app.decorate('authenticate', async (request: any, reply: any) => {

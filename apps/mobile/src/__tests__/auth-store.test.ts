@@ -89,6 +89,8 @@ describe('logout', () => {
 
 describe('loadUser', () => {
   it('토큰 유효 시 user 로드', async () => {
+    const SecureStore = require('expo-secure-store')
+    SecureStore.getItemAsync.mockResolvedValue('valid-token')
     const mockUser = { id: 'u1', email: 'test@example.com', displayName: 'Test' }
     api.get.mockResolvedValue({ data: mockUser })
 
@@ -99,6 +101,8 @@ describe('loadUser', () => {
   })
 
   it('토큰 만료 시 isAuthenticated false', async () => {
+    const SecureStore = require('expo-secure-store')
+    SecureStore.getItemAsync.mockResolvedValue('expired-token')
     api.get.mockRejectedValue(new Error('Session expired'))
 
     await act(async () => { await getStore().loadUser() })

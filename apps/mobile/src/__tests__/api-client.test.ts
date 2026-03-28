@@ -52,9 +52,11 @@ describe('ApiClient.get', () => {
 
 describe('ApiClient 401 처리', () => {
   it('refresh 토큰으로 재시도 성공', async () => {
-    SecureStore.getItemAsync
-      .mockResolvedValueOnce('expired-token')   // access_token
-      .mockResolvedValueOnce('valid-refresh')    // refresh_token
+    SecureStore.getItemAsync.mockImplementation((key: string) => {
+      if (key === 'access_token') return Promise.resolve('expired-token')
+      if (key === 'refresh_token') return Promise.resolve('valid-refresh')
+      return Promise.resolve(null)
+    })
 
     mockFetch
       .mockResolvedValueOnce(makeResponse({}, 401))             // 원본 요청 실패
@@ -67,9 +69,11 @@ describe('ApiClient 401 처리', () => {
   })
 
   it('refresh 실패 시 Session expired 에러', async () => {
-    SecureStore.getItemAsync
-      .mockResolvedValueOnce('expired-token')
-      .mockResolvedValueOnce('bad-refresh')
+    SecureStore.getItemAsync.mockImplementation((key: string) => {
+      if (key === 'access_token') return Promise.resolve('expired-token')
+      if (key === 'refresh_token') return Promise.resolve('bad-refresh')
+      return Promise.resolve(null)
+    })
 
     mockFetch
       .mockResolvedValueOnce(makeResponse({}, 401))

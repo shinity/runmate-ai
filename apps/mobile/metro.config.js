@@ -16,4 +16,10 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ]
 
+// Resolve workspace packages directly from TypeScript source (no dist/ needed)
+config.resolver.extraNodeModules = {
+  '@runmate/types': path.resolve(monorepoRoot, 'packages/types/src'),
+  '@runmate/validators': path.resolve(monorepoRoot, 'packages/validators/src'),
+}
+
 module.exports = withNativeWind(config, { input: './global.css' })

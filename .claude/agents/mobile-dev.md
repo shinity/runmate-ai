@@ -1,7 +1,7 @@
 ---
 name: mobile-dev
 description: RunMate 모바일 앱 개발 전문가. Expo 화면 추가, React Native 컴포넌트, Zustand 상태 관리, TanStack Query 훅 작업 시 사용. UI 구현, 내비게이션, 웨어러블 연동에 활용.
-tools: Read, Write, Edit, Glob, Grep
+tools: Read, Write, Edit, Glob, Grep, Bash
 model: sonnet
 ---
 
