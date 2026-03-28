@@ -43,4 +43,4 @@ COPY --from=builder /app/packages/validators/dist /app/packages/validators/dist
 COPY --from=builder /app/packages/validators/package.json /app/packages/validators/package.json
 EXPOSE 3000
 # DB 마이그레이션 후 서버 시작
-CMD ["sh", "-c", "npx prisma db push --schema ./prisma/schema.prisma && node dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push --schema ./prisma/schema.prisma --accept-data-loss && node dist/index.js"]
