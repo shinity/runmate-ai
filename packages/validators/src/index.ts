@@ -36,6 +36,7 @@ export const UpdateUserSchema = z.object({
   matchingEnabled: z.boolean().optional(),
   preferGroupRuns: z.boolean().optional(),
   maxMatchDistanceKm: z.number().min(0).max(100).optional(),
+  onboardingCompleted: z.boolean().optional(),
 })
 
 // ─── Run ────────────────────────────────────────────────────────────────────

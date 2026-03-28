@@ -117,6 +117,9 @@ model User {
   countryCode String?
   timezone    String  @default("UTC")
 
+  // Onboarding
+  onboardingCompleted Boolean @default(false)
+
   // Matching
   matchingEnabled     Boolean @default(true)
   preferGroupRuns     Boolean @default(false)
