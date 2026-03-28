@@ -157,6 +157,7 @@ jobs:
           port: ${{ secrets.NAS_SSH_PORT }}
           script: |
             set -e
+            export PATH=$PATH:/usr/local/bin
             cd ${{ secrets.NAS_PROJECT_PATH }}
 
             # 현재 이미지를 previous로 저장 (롤백용)
