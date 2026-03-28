@@ -7,7 +7,7 @@ COPY package.json package-lock.json* ./
 COPY packages/types/package.json ./packages/types/package.json
 COPY packages/validators/package.json ./packages/validators/package.json
 COPY services/api/package.json ./services/api/package.json
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --ignore-scripts
 
 FROM base AS dev
 COPY --from=deps /app/node_modules ./node_modules
