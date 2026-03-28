@@ -1,9 +1,12 @@
 {
-  "plugins": [
-    "react-native-health",
-    "react-native-health-connect"
-  ],
-  "ios": {
-    "bundleIdentifier": "com.anonymous.runmate-ai"
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "d3b79ca4-2598-4995-9797-59896d97d1d4"
+      }
+    },
+    "android": {
+      "package": "io.runmate.app"
+    }
   }
 }

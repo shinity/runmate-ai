@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify'
+import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { UpdateUserSchema } from '@runmate/validators'
 

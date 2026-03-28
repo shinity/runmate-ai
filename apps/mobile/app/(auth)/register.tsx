@@ -7,6 +7,8 @@ import { Link } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../../stores/auth'
 import { useGoogleAuth } from '../../hooks/useGoogleAuth'
+import { useToast } from '../../components/Toast'
+import { getErrorMessage } from '../../lib/feedback'
 
 export default function RegisterScreen() {
   const [displayName, setDisplayName] = useState('')
@@ -14,23 +16,21 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('')
   const { register, isLoading } = useAuthStore()
   const { promptAsync, request } = useGoogleAuth()
+  const { showToast } = useToast()
 
   async function handleRegister() {
     if (!displayName.trim() || !email.trim() || !password) {
-      Alert.alert('입력 오류', '모든 항목을 입력해주세요.')
+      showToast('error', '모든 항목을 입력해주세요.')
       return
     }
     if (password.length < 8) {
-      Alert.alert('입력 오류', '비밀번호는 8자 이상이어야 합니다.')
+      showToast('error', '비밀번호는 8자 이상이어야 합니다.')
       return
     }
     try {
       await register(email.trim(), password, displayName.trim())
     } catch (e: any) {
-      const msg = e.message?.includes('EMAIL_TAKEN')
-        ? '이미 사용 중인 이메일입니다.'
-        : e.message ?? '회원가입에 실패했습니다.'
-      Alert.alert('회원가입 실패', msg)
+      showToast('error', getErrorMessage(e))
     }
   }
 

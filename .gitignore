@@ -50,3 +50,14 @@ expo-env.d.ts
 
 # Prisma
 prisma/migrations/
+
+# Native build outputs (generated via expo prebuild)
+android/
+ios/
+
+# EAS
+.eas/
+apps/mobile/.eas/
+
+# Prod env
+.env.prod

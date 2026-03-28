@@ -6,22 +6,25 @@ import {
 import { Link } from 'expo-router'
 import { useAuthStore } from '../../stores/auth'
 import { useGoogleAuth } from '../../hooks/useGoogleAuth'
+import { useToast } from '../../components/Toast'
+import { getErrorMessage } from '../../lib/feedback'
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const { login, isLoading } = useAuthStore()
   const { promptAsync, request } = useGoogleAuth()
+  const { showToast } = useToast()
 
   async function handleLogin() {
     if (!email.trim() || !password) {
-      Alert.alert('입력 오류', '이메일과 비밀번호를 입력해주세요.')
+      showToast('error', '이메일과 비밀번호를 입력해주세요.')
       return
     }
     try {
       await login(email.trim(), password)
     } catch (e: any) {
-      Alert.alert('로그인 실패', e.message ?? '이메일 또는 비밀번호를 확인해주세요.')
+      showToast('error', getErrorMessage(e))
     }
   }
 

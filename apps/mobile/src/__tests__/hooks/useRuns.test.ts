@@ -150,6 +150,30 @@ describe('useCreateRun', () => {
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['runs'] })
   })
 
+  it('러닝 생성 성공 시 coaching/insights 쿼리가 invalidate된다', async () => {
+    const mockRun = { id: 'new-run', distanceMeters: 5000 }
+    api.post.mockResolvedValue({ data: mockRun })
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: queryClient }, children)
+
+    const { result } = renderHook(() => useCreateRun(), { wrapper })
+
+    result.current.mutate({
+      startedAt: '2026-03-28T07:00:00Z',
+      endedAt: '2026-03-28T07:30:00Z',
+      durationSeconds: 1800,
+      distanceMeters: 5000,
+      avgPaceSecPerKm: 360,
+      dataSource: 'app_native',
+    } as any)
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['coaching', 'insights'] })
+  })
+
   it('러닝 생성 실패 시 error 상태가 된다', async () => {
     api.post.mockRejectedValue(new Error('Server error'))
 
@@ -158,5 +182,7 @@ describe('useCreateRun', () => {
     result.current.mutate({} as any)
 
     await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.error).toBeInstanceOf(Error)
+    expect((result.current.error as Error).message).toBe('Server error')
   })
 })

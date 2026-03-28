@@ -6,21 +6,25 @@ import {
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../lib/api'
+import { useToast } from '../../components/Toast'
+import { getErrorMessage, SUCCESS_MESSAGES } from '../../lib/feedback'
 
 export default function ForgotPasswordScreen() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const { showToast } = useToast()
 
   async function handleSendCode() {
     if (!email.trim()) {
-      Alert.alert('입력 오류', '이메일을 입력해주세요.')
+      showToast('error', '이메일을 입력해주세요.')
       return
     }
 
     setIsLoading(true)
     try {
       const { data } = await api.post<{ code: string }>('/auth/forgot-password', { email: email.trim() })
+      showToast('success', SUCCESS_MESSAGES.PASSWORD_RESET_SENT)
       Alert.alert(
         '인증 코드 발송',
         `인증 코드: ${data.code}\n이 코드를 다음 화면에 입력하세요`,
@@ -32,7 +36,7 @@ export default function ForgotPasswordScreen() {
         ],
       )
     } catch (e: any) {
-      Alert.alert('오류', e.message ?? '인증 코드 발송에 실패했습니다.')
+      showToast('error', getErrorMessage(e))
     } finally {
       setIsLoading(false)
     }
