@@ -193,6 +193,8 @@ jobs:
                 break
               fi
               echo "Attempt $i/12 failed, retrying..."
+              docker compose -f docker-compose.prod.yml ps api
+              docker compose -f docker-compose.prod.yml logs api --tail 5
             done
 
             if [ "$HEALTHY" = "true" ]; then
