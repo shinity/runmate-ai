@@ -82,6 +82,7 @@ export default function RunScreen() {
     const datapoints = stopRun()
 
     if (finalDistance < 100) {
+      Alert.alert('런 기록 없음', '100m 이상 달려야 저장할 수 있어요.')
       setTab('history')
       return
     }
@@ -117,7 +118,9 @@ export default function RunScreen() {
       setSummary(null)
       setTab('history')
     } catch (e: any) {
-      Alert.alert('저장 실패', e.message ?? '런 저장에 실패했습니다.')
+      console.error('[RunSave] error:', JSON.stringify(e))
+      const msg = e?.message || e?.error?.message || JSON.stringify(e) || '런 저장에 실패했습니다.'
+      Alert.alert('저장 실패', msg)
     }
   }
 
@@ -175,6 +178,11 @@ export default function RunScreen() {
             : <Text style={styles.saveSummaryBtnText}>저장하기 💾</Text>
           }
         </TouchableOpacity>
+        {createRun.error && (
+          <Text style={{ color: '#ef4444', textAlign: 'center', marginBottom: 8, fontSize: 13 }}>
+            {(createRun.error as any)?.message ?? '저장 실패'}
+          </Text>
+        )}
         <TouchableOpacity
           style={styles.discardBtn}
           onPress={() =>
