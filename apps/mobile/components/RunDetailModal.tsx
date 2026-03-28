@@ -2,8 +2,12 @@ import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   ScrollView, ActivityIndicator, Image, Dimensions,
 } from 'react-native'
-import MapView, { Polyline, Marker, PROVIDER_DEFAULT } from 'react-native-maps'
+import Constants from 'expo-constants'
 import { Ionicons } from '@expo/vector-icons'
+
+const isExpoGo = Constants.appOwnership === 'expo'
+const MapView = isExpoGo ? null : require('react-native-maps').default
+const { Polyline, Marker, PROVIDER_DEFAULT } = isExpoGo ? {} : require('react-native-maps')
 import { useRunDetail } from '../hooks/useRuns'
 import { formatPace, formatDistance, formatDuration } from '../lib/format'
 import ShareRunButton from './ShareRunButton'
@@ -93,7 +97,7 @@ export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* 지도 */}
             <View style={styles.mapContainer}>
-              {coordinates.length > 0 && mapRegion ? (
+              {!isExpoGo && coordinates.length > 0 && mapRegion && MapView ? (
                 <MapView
                   style={styles.map}
                   provider={PROVIDER_DEFAULT}
@@ -118,7 +122,7 @@ export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) 
                       </View>
                     </Marker>
                   )}
-                  {endCoord && endCoord !== startCoord && (
+                  {endCoord && startCoord && (endCoord.latitude !== startCoord.latitude || endCoord.longitude !== startCoord.longitude) && (
                     <Marker coordinate={endCoord} anchor={{ x: 0.5, y: 0.5 }}>
                       <View style={styles.markerEnd}>
                         <Text style={styles.markerText}>E</Text>

@@ -48,10 +48,14 @@ class ApiClient {
         })
         if (refreshRes.ok) {
           const { data } = await refreshRes.json()
-          await SecureStore.setItemAsync('access_token', data.accessToken)
+          await saveTokens(data.accessToken, data.refreshToken ?? refreshToken)
           headers['Authorization'] = `Bearer ${data.accessToken}`
           const retryRes = await fetch(`${API_BASE}${path}`, { ...options, headers })
-          return retryRes.json()
+          const retryJson = await retryRes.json()
+          if (!retryRes.ok) {
+            throw new Error((retryJson as ApiError).error?.message ?? 'Request failed')
+          }
+          return retryJson
         }
       }
       await clearTokens()

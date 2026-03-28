@@ -16,8 +16,8 @@ const EXPERIENCE_OPTIONS = [
 
 const GOAL_OPTIONS = [
   { value: 'fitness', label: '건강 유지', icon: 'fitness' },
-  { value: 'five_k', label: '5km 완주', icon: 'flag' },
-  { value: 'ten_k', label: '10km 완주', icon: 'medal' },
+  { value: '5k', label: '5km 완주', icon: 'flag' },
+  { value: '10k', label: '10km 완주', icon: 'medal' },
   { value: 'half_marathon', label: '하프 마라톤', icon: 'trophy' },
   { value: 'marathon', label: '마라톤', icon: 'trophy' },
   { value: 'ultra', label: '울트라', icon: 'star' },

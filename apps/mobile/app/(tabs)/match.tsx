@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useRouter } from 'expo-router'
@@ -148,8 +148,8 @@ function ActiveMatchesTab() {
                 <Text style={[styles.cardSub, { color: '#4ade80' }]}>✓ 매칭 완료</Text>
               </View>
               <TouchableOpacity
-                style={styles.chatBtn}
-                onPress={() => router.push(`/chat/${m.id}` as any)}
+                style={[styles.chatBtn, { opacity: 0.4 }]}
+                onPress={() => Alert.alert('준비 중', '채팅 기능은 곧 출시됩니다.')}
               >
                 <Text style={styles.chatBtnText}>채팅</Text>
               </TouchableOpacity>

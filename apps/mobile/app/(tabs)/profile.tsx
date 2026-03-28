@@ -121,7 +121,7 @@ export default function ProfileScreen() {
             {prs.map((pr: any, i: number) => (
               <View key={pr.distance} style={[styles.prRow, i > 0 && styles.prRowBorder]}>
                 <Text style={styles.prDistance}>{DISTANCE_LABELS[pr.distance] ?? pr.distance}</Text>
-                <Text style={styles.prPace}>{formatPace(pr.avgPaceSecPerKm)}/km</Text>
+                <Text style={styles.prPace}>{formatPace(pr.paceSecPerKm)}/km</Text>
               </View>
             ))}
           </View>
@@ -198,15 +198,15 @@ export default function ProfileScreen() {
       {/* Settings */}
       <Text style={styles.sectionTitle}>설정</Text>
       <View style={styles.card}>
-        <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/profile-edit')}>
+        <TouchableOpacity style={styles.settingRow} onPress={() => Alert.alert('준비 중', '프로필 수정 기능은 곧 출시됩니다.')}>
           <Text style={styles.settingLabel}>프로필 수정</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => router.push('/devices')}>
+        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => Alert.alert('준비 중', '기기 연결 기능은 곧 출시됩니다.')}>
           <Text style={styles.settingLabel}>연결된 기기</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => router.push('/match-settings')}>
+        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => Alert.alert('준비 중', '매칭 설정 기능은 곧 출시됩니다.')}>
           <Text style={styles.settingLabel}>매칭 설정</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>

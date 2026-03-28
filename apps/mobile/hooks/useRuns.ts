@@ -53,6 +53,7 @@ export function useRunDetail(id: string | null) {
   return useQuery({
     queryKey: ['runs', 'detail', id],
     queryFn: async () => {
+      if (!id) throw new Error('id is required')
       const { data } = await api.get<RunDetail>(`/runs/${id}`)
       return data
     },
