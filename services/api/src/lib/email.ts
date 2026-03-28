@@ -1,10 +1,9 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 const FROM = process.env.EMAIL_FROM ?? 'RunMate <onboarding@resend.dev>'
 
 export async function sendPasswordResetEmail(to: string, code: string): Promise<void> {
+  const resend = new Resend(process.env.RESEND_API_KEY)
   await resend.emails.send({
     from: FROM,
     to,
