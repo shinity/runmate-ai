@@ -92,11 +92,12 @@ enum RunningStyle {
 // ─── User ──────────────────────────────────────────────────────────────────
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  passwordHash String
-  displayName String
-  avatarUrl   String?
+  id           String  @id @default(uuid())
+  email        String  @unique
+  passwordHash String?
+  googleId     String? @unique
+  displayName  String
+  avatarUrl    String?
 
   // Physical
   dateOfBirth DateTime?

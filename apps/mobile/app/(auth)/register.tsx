@@ -6,12 +6,14 @@ import {
 import { Link } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../../stores/auth'
+import { useGoogleAuth } from '../../hooks/useGoogleAuth'
 
 export default function RegisterScreen() {
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const { register, isLoading } = useAuthStore()
+  const { promptAsync, request } = useGoogleAuth()
 
   async function handleRegister() {
     if (!displayName.trim() || !email.trim() || !password) {
@@ -89,6 +91,22 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* 구분선 */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>또는</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Google 로그인 */}
+        <TouchableOpacity
+          style={[styles.googleButton, !request && styles.btnDisabled]}
+          onPress={() => promptAsync()}
+          disabled={!request}
+        >
+          <Text style={styles.googleButtonText}>Google로 계속하기</Text>
+        </TouchableOpacity>
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>이미 계정이 있으신가요? </Text>
           <Link href="/(auth)/login" asChild>
@@ -127,6 +145,23 @@ const styles = StyleSheet.create({
   },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 16,
+  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#334155' },
+  dividerText: { color: '#64748b', fontSize: 13, marginHorizontal: 12 },
+  googleButton: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  googleButtonText: { color: '#111827', fontWeight: '700', fontSize: 16 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
   footerText: { color: '#64748b', fontSize: 14 },
   footerLink: { color: '#3b82f6', fontWeight: '700', fontSize: 14 },
