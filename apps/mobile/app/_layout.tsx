@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import * as Notifications from 'expo-notifications'
+import Constants from 'expo-constants'
 import { useAuthStore } from '../stores/auth'
 import { usePushNotifications } from '../hooks/usePushNotifications'
 
@@ -11,16 +11,23 @@ export const unstable_settings = {
   initialRouteName: '(auth)',
 }
 
-// 포그라운드 알림 표시 설정
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-})
+export const isExpoGo = Constants.appOwnership === 'expo'
+
+// 포그라운드 알림 표시 설정 (Expo Go 제외)
+if (!isExpoGo) {
+  try {
+    const Notifications = require('expo-notifications')
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    })
+  } catch {}
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,19 +75,19 @@ function AuthGuard() {
 
 function PushNotificationManager() {
   const router = useRouter()
-  const notificationListener = useRef<Notifications.EventSubscription | null>(null)
-  const responseListener = useRef<Notifications.EventSubscription | null>(null)
 
   usePushNotifications()
 
   useEffect(() => {
-    // 앱이 포그라운드 상태일 때 알림 수신
-    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+    if (isExpoGo) return
+
+    const Notifications = require('expo-notifications')
+
+    const notificationListener = Notifications.addNotificationReceivedListener((notification: any) => {
       console.log('[Push] Notification received:', notification)
     })
 
-    // 알림 탭 시 화면 이동
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+    const responseListener = Notifications.addNotificationResponseReceivedListener((response: any) => {
       const data = response.notification.request.content.data as Record<string, unknown>
       const type = data?.type
 
@@ -92,8 +99,8 @@ function PushNotificationManager() {
     })
 
     return () => {
-      notificationListener.current?.remove()
-      responseListener.current?.remove()
+      notificationListener?.remove()
+      responseListener?.remove()
     }
   }, [router])
 

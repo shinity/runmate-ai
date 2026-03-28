@@ -1,33 +1,30 @@
 import { useState, useEffect } from 'react'
-import * as Notifications from 'expo-notifications'
 import { Platform } from 'react-native'
+import Constants from 'expo-constants'
 import { api } from '../lib/api'
 import { useAuthStore } from '../stores/auth'
 
 export interface PushNotificationState {
   token: string | null
-  permissionStatus: Notifications.PermissionStatus | null
+  permissionStatus: string | null
 }
 
-/**
- * Expo 푸시 알림 토큰을 등록하고 서버에 전송합니다.
- * 1. requestPermissionsAsync()로 권한 요청
- * 2. getExpoPushTokenAsync()로 토큰 획득
- * 3. /sync/devices/connect API로 토큰 전송
- */
+const isExpoGo = Constants.appOwnership === 'expo'
+
 export function usePushNotifications(): PushNotificationState {
   const [token, setToken] = useState<string | null>(null)
-  const [permissionStatus, setPermissionStatus] = useState<Notifications.PermissionStatus | null>(null)
+  const [permissionStatus, setPermissionStatus] = useState<string | null>(null)
   const { isAuthenticated } = useAuthStore()
 
   useEffect(() => {
-    if (!isAuthenticated) return
+    if (!isAuthenticated || isExpoGo) return
 
     let isMounted = true
 
     async function registerPushToken() {
       try {
-        // Android는 알림 채널 설정 필요
+        const Notifications = require('expo-notifications')
+
         if (Platform.OS === 'android') {
           await Notifications.setNotificationChannelAsync('default', {
             name: 'default',
@@ -37,7 +34,6 @@ export function usePushNotifications(): PushNotificationState {
           })
         }
 
-        // 권한 요청
         const { status: existingStatus } = await Notifications.getPermissionsAsync()
         let finalStatus = existingStatus
 
@@ -49,19 +45,14 @@ export function usePushNotifications(): PushNotificationState {
         if (!isMounted) return
         setPermissionStatus(finalStatus)
 
-        if (finalStatus !== 'granted') {
-          console.log('[Push] Permission not granted')
-          return
-        }
+        if (finalStatus !== 'granted') return
 
-        // Expo 푸시 토큰 획득
         const pushTokenResponse = await Notifications.getExpoPushTokenAsync()
         const expoPushToken = pushTokenResponse.data
 
         if (!isMounted) return
         setToken(expoPushToken)
 
-        // 서버에 pushToken 등록 (app_native 기기 타입으로 등록)
         await api.post('/sync/devices/connect', {
           deviceType: 'app_native',
           deviceId: expoPushToken,
@@ -73,10 +64,7 @@ export function usePushNotifications(): PushNotificationState {
     }
 
     registerPushToken()
-
-    return () => {
-      isMounted = false
-    }
+    return () => { isMounted = false }
   }, [isAuthenticated])
 
   return { token, permissionStatus }
