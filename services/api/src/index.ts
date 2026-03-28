@@ -5,6 +5,8 @@ import rateLimit from '@fastify/rate-limit'
 import swagger from '@fastify/swagger'
 import swaggerUi from '@fastify/swagger-ui'
 import websocket from '@fastify/websocket'
+import staticFiles from '@fastify/static'
+import path from 'path'
 import { createBullBoard } from '@bull-board/api'
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
 import { FastifyAdapter } from '@bull-board/fastify'
@@ -37,6 +39,13 @@ async function bootstrap() {
   await app.register(cors, {
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? true,
     credentials: true,
+  })
+
+  // Static file serving for route art SVGs
+  const uploadsDir = process.env.UPLOADS_DIR ?? path.join(process.cwd(), 'uploads')
+  await app.register(staticFiles, {
+    root: uploadsDir,
+    prefix: '/uploads/',
   })
 
   await app.register(jwt, {
