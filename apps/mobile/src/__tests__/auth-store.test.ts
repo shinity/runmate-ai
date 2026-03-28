@@ -37,6 +37,7 @@ describe('login', () => {
   it('로그인 성공 시 user 및 isAuthenticated 설정', async () => {
     const mockUser = { id: 'u1', email: 'test@example.com', displayName: 'Test' }
     api.post.mockResolvedValue({ data: { user: mockUser, tokens: { accessToken: 'at', refreshToken: 'rt' } } })
+    api.get.mockResolvedValue({ data: mockUser })
 
     await act(async () => {
       await getStore().login('test@example.com', 'password123')
@@ -64,6 +65,7 @@ describe('register', () => {
   it('회원가입 성공 시 user 설정', async () => {
     const mockUser = { id: 'u2', email: 'new@example.com', displayName: 'New User' }
     api.post.mockResolvedValue({ data: { user: mockUser, tokens: { accessToken: 'at2', refreshToken: 'rt2' } } })
+    api.get.mockResolvedValue({ data: mockUser })
 
     await act(async () => {
       await getStore().register('new@example.com', 'pass123', 'New User')

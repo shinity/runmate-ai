@@ -9,6 +9,8 @@ import { useRunStore } from '../../stores/run'
 import { useCreateRun, useRuns } from '../../hooks/useRuns'
 import { formatPace, formatDistance, formatDuration } from '../../lib/format'
 import RunDetailModal from '../../components/RunDetailModal'
+import { useToast } from '../../components/Toast'
+import { getErrorMessage, SUCCESS_MESSAGES } from '../../lib/feedback'
 
 interface RunSummary {
   startedAt: string
@@ -38,6 +40,7 @@ export default function RunScreen() {
 
   const createRun = useCreateRun()
   const { data: runs } = useRuns()
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (isRunning && !isPaused) {
@@ -67,7 +70,7 @@ export default function RunScreen() {
         },
       )
     } catch (e: any) {
-      Alert.alert('위치 권한 필요', e.message)
+      showToast('error', getErrorMessage(e))
     }
   }
 
@@ -82,7 +85,7 @@ export default function RunScreen() {
     const datapoints = stopRun()
 
     if (finalDistance < 100) {
-      Alert.alert('런 기록 없음', '100m 이상 달려야 저장할 수 있어요.')
+      showToast('info', '100m 이상 달려야 저장할 수 있어요.')
       setTab('history')
       return
     }
@@ -115,12 +118,12 @@ export default function RunScreen() {
           powerWatts: null,
         })),
       })
+      showToast('success', SUCCESS_MESSAGES.RUN_SAVED)
       setSummary(null)
       setTab('history')
     } catch (e: any) {
       console.error('[RunSave] error:', JSON.stringify(e))
-      const msg = e?.message || e?.error?.message || JSON.stringify(e) || '런 저장에 실패했습니다.'
-      Alert.alert('저장 실패', msg)
+      showToast('error', getErrorMessage(e))
     }
   }
 

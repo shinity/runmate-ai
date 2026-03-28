@@ -1,11 +1,13 @@
 import '../global.css'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
+import { View, StyleSheet } from 'react-native'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Constants from 'expo-constants'
 import { useAuthStore } from '../stores/auth'
 import { usePushNotifications } from '../hooks/usePushNotifications'
+import Toast from '../components/Toast'
 
 export const unstable_settings = {
   initialRouteName: '(auth)',
@@ -110,20 +112,27 @@ function PushNotificationManager() {
 export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
-      <StatusBar style="light" />
-      <AuthGuard />
-      <PushNotificationManager />
-      <Stack
-        screenOptions={{
-          headerStyle: { backgroundColor: '#0f172a' },
-          headerTintColor: '#f8fafc',
-          contentStyle: { backgroundColor: '#0f172a' },
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      </Stack>
+      <View style={styles.root}>
+        <StatusBar style="light" />
+        <AuthGuard />
+        <PushNotificationManager />
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: '#0f172a' },
+            headerTintColor: '#f8fafc',
+            contentStyle: { backgroundColor: '#0f172a' },
+          }}
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+        </Stack>
+        <Toast />
+      </View>
     </QueryClientProvider>
   )
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+})

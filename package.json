@@ -7,9 +7,13 @@
     "packages/*"
   ],
   "scripts": {
+    "postinstall": "npm run build --workspace=packages/types && npm run build --workspace=packages/validators",
     "dev": "turbo dev",
     "build": "turbo build",
-    "lint": "turbo lint",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "type-check": "turbo type-check",
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
@@ -18,21 +22,22 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
     "eslint": "^9.17.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-native": "^5.0.0",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.57.2"
   },
   "packageManager": "npm@10.8.2",
   "engines": {
     "node": ">=22.0.0"
-  },
-  "dependencies": {
-    "react-native-health": "^1.19.0",
-    "react-native-health-connect": "^3.5.0",
-    "expo": "~54.0.33",
-    "react": "19.1.0",
-    "react-native": "0.81.5"
   },
   "version": "1.0.0"
 }
