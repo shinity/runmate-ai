@@ -37,8 +37,8 @@ class ApiClient {
 
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
 
-    if (res.status === 401) {
-      // Attempt token refresh
+    if (res.status === 401 && !path.startsWith('/auth/')) {
+      // Attempt token refresh (skip for auth endpoints)
       const refreshToken = await SecureStore.getItemAsync('refresh_token')
       if (refreshToken) {
         const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {

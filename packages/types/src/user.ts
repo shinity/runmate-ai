@@ -51,6 +51,9 @@ export interface User {
 
   connectedDevices: ConnectedDevice[]
 
+  // Onboarding
+  onboardingCompleted: boolean
+
   // Matching preferences
   matchingEnabled: boolean
   preferGroupRuns: boolean

@@ -40,7 +40,7 @@ export default function ProfileSetupScreen() {
     }
     setIsSaving(true)
     try {
-      await updateUser({ experienceLevel: experienceLevel as any, primaryGoal: primaryGoal as any, weeklyTargetKm: km })
+      await updateUser({ experienceLevel: experienceLevel as any, primaryGoal: primaryGoal as any, weeklyTargetKm: km, onboardingCompleted: true })
       router.replace('/(tabs)')
     } catch (e: any) {
       Alert.alert('오류', e.message ?? '저장에 실패했습니다.')

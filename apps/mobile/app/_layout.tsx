@@ -58,17 +58,17 @@ function AuthGuard() {
     if (!isAuthenticated && !inAuthGroup) {
       router.replace('/(auth)/login')
     } else if (isAuthenticated && inAuthGroup) {
-      if (!user?.experienceLevel) {
+      if (!user?.onboardingCompleted) {
         router.replace('/(onboarding)/profile-setup')
       } else {
         router.replace('/(tabs)')
       }
-    } else if (isAuthenticated && inOnboardingGroup && user?.experienceLevel) {
+    } else if (isAuthenticated && inOnboardingGroup && user?.onboardingCompleted) {
       router.replace('/(tabs)')
-    } else if (isAuthenticated && inTabsGroup && !user?.experienceLevel) {
+    } else if (isAuthenticated && inTabsGroup && !user?.onboardingCompleted) {
       router.replace('/(onboarding)/profile-setup')
     }
-  }, [isAuthenticated, isInitialized, segments[0], user?.experienceLevel])
+  }, [isAuthenticated, isInitialized, segments[0], user?.onboardingCompleted])
 
   return null
 }

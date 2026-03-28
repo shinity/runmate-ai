@@ -29,7 +29,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         { email, password },
       )
       await saveTokens(data.tokens.accessToken, data.tokens.refreshToken)
-      set({ user: data.user, isAuthenticated: true })
+      const { data: fullUser } = await api.get<User>('/users/me')
+      set({ user: fullUser, isAuthenticated: true })
     } catch (e) {
       set({ isAuthenticated: false, user: null })
       throw e
@@ -46,7 +47,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         { email, password, displayName },
       )
       await saveTokens(data.tokens.accessToken, data.tokens.refreshToken)
-      set({ user: data.user, isAuthenticated: true })
+      const { data: fullUser } = await api.get<User>('/users/me')
+      set({ user: fullUser, isAuthenticated: true })
     } catch (e) {
       set({ isAuthenticated: false, user: null })
       throw e
