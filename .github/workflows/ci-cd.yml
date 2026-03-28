@@ -178,7 +178,7 @@ jobs:
             HEALTHY=false
             for i in $(seq 1 12); do
               sleep 5
-              if curl -sf http://localhost/health > /dev/null 2>&1; then
+              if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
                 HEALTHY=true
                 break
               fi
