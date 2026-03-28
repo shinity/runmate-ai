@@ -122,6 +122,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Delete old GHCR images (keep last 5)
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: runmate-api
+          package-type: container
+          min-versions-to-keep: 5
+          delete-only-untagged-versions: false
+        continue-on-error: true
+
   # ─── 3. Synology 배포 ────────────────────────────────────────
   deploy:
     name: Deploy to Synology
@@ -187,7 +196,9 @@ jobs:
 
             if [ "$HEALTHY" = "true" ]; then
               echo "✅ 배포 완료: $(date)"
+              # 사용하지 않는 이미지 정리 (태그 없는 이미지 + 7일 이상 된 이미지)
               docker image prune -f
+              docker image prune -a --filter "until=168h" -f
               exit 0
             fi
 
