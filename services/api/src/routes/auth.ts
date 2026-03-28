@@ -3,6 +3,7 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../lib/prisma'
 import { LoginSchema, RegisterSchema } from '@runmate/validators'
+import { sendPasswordResetEmail } from '../lib/email'
 
 export async function authRoutes(app: FastifyInstance) {
   app.post('/register', async (request, reply) => {
@@ -93,8 +94,9 @@ export async function authRoutes(app: FastifyInstance) {
       data: { userId: user.id, token: code, expiresAt },
     })
 
-    // MVP: 코드를 응답에 직접 포함 (추후 이메일 발송으로 교체)
-    return reply.send({ data: { message: '코드가 발송되었습니다', code } })
+    await sendPasswordResetEmail(user.email, code)
+
+    return reply.send({ data: { message: '코드가 발송되었습니다' } })
   })
 
   app.post('/reset-password', async (request, reply) => {
