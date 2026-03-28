@@ -1,12 +1,19 @@
-import * as Google from 'expo-auth-session/providers/google'
-import * as WebBrowser from 'expo-web-browser'
 import { useEffect } from 'react'
 import { api, saveTokens } from '../lib/api'
 import { useAuthStore } from '../stores/auth'
 
-WebBrowser.maybeCompleteAuthSession()
+// expo-auth-session requires native modules not available in Expo Go
+let Google: any = null
+let WebBrowser: any = null
+try {
+  Google = require('expo-auth-session/providers/google')
+  WebBrowser = require('expo-web-browser')
+  WebBrowser.maybeCompleteAuthSession()
+} catch {
+  // Running in Expo Go — Google OAuth unavailable
+}
 
-export function useGoogleAuth() {
+function useGoogleAuthNative() {
   const { loadUser } = useAuthStore()
 
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -30,3 +37,9 @@ export function useGoogleAuth() {
 
   return { promptAsync, request }
 }
+
+function useGoogleAuthFallback() {
+  return { promptAsync: () => {}, request: null }
+}
+
+export const useGoogleAuth = Google ? useGoogleAuthNative : useGoogleAuthFallback
