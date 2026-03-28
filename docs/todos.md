@@ -6,15 +6,12 @@
 - [x] 상용 수준 인프라 (Nginx, Uptime Kuma, DB 자동 백업, 자동 롤백)
 - [x] 프로덕션 Docker 빌드 수정 (workspace 패키지, prisma 자동 마이그레이션)
 - [x] 로컬 프로덕션 테스트 (회원가입, 로그인, 런 생성, AI 코칭 인사이트)
+- [x] NAS 배포 완료 (runmate-ai 전용 계정, 전체 스택 운영 중)
+- [x] GHCR 이미지 정리 정책 (최신 5개 유지, NAS 7일 이상 자동 삭제)
 
 ---
 
 ## 🔥 P0 — 서비스 오픈 전 필수
-
-### NAS 배포 (진행 중)
-- [ ] NAS에 `/volume1/docker/runmate-ai` 폴더 생성
-- [ ] `.env` 파일 실제 값으로 작성
-- [ ] 첫 배포 확인 (CI/CD 파이프라인 자동 처리)
 
 ### Cloudflare Tunnel
 - [ ] cloudflared 설치 → tunnel 생성 → 시놀로지 도메인 DNS 연결
