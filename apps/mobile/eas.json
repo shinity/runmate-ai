@@ -15,8 +15,7 @@
       "config": "preview.yml",
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "applicationArchivePattern": "android/app/build/outputs/apk/debug/app-debug.apk"
+        "buildType": "apk"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1"

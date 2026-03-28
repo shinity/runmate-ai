@@ -15,3 +15,8 @@ build:
         name: Build Android Debug APK
         working_directory: android
         command: ./gradlew assembleDebug
+    - eas/upload_artifact:
+        name: Upload APK
+        inputs:
+          type: application-archive
+          path: android/app/build/outputs/apk/debug/app-debug.apk
