@@ -4,16 +4,10 @@ build:
     - eas/checkout
     - run:
         name: Install dependencies
-        working_directory: ../..
-        command: npm install --legacy-peer-deps
+        command: cd ../.. && npm install --legacy-peer-deps
     - run:
-        name: Build @runmate/types
-        working_directory: ../../packages/types
-        command: npx tsc
-    - run:
-        name: Build @runmate/validators
-        working_directory: ../../packages/validators
-        command: npx tsc
+        name: Build workspace packages
+        command: cd ../../packages/types && npx tsc && cd ../validators && npx tsc
     - run:
         name: Expo Prebuild (Android)
         command: npx expo prebuild --platform android --non-interactive
