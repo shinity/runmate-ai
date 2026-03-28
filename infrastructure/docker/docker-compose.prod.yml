@@ -69,17 +69,16 @@ services:
         max-size: "10m"
         max-file: "5"
 
-  ai-pipeline:
-    build:
-      context: ../../services/ai-pipeline
-      dockerfile: Dockerfile
-    restart: unless-stopped
-    environment:
-      AI_PIPELINE_SECRET: ${AI_PIPELINE_SECRET}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
-    volumes:
-      - uploads:/app/uploads
+  # ai-pipeline: GHCR 이미지 빌드 후 활성화
+  # ai-pipeline:
+  #   image: ghcr.io/${GHCR_OWNER}/runmate-ai-pipeline:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     AI_PIPELINE_SECRET: ${AI_PIPELINE_SECRET}
+  #     OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  #     PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+  #   volumes:
+  #     - uploads:/app/uploads
 
   nginx:
     image: nginx:1.27-alpine
