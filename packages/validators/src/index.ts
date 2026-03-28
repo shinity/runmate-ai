@@ -83,7 +83,7 @@ export const CreateRunSchema = z.object({
 
 export const PaginationSchema = z.object({
   after: z.string().optional(),
-  limit: z.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
 // ─── Coaching ───────────────────────────────────────────────────────────────
