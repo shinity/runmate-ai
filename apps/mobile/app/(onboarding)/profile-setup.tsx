@@ -6,6 +6,8 @@ import {
 import { useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../../stores/auth'
+import { useToast } from '../../components/Toast'
+import { getErrorMessage } from '../../lib/feedback'
 
 const EXPERIENCE_OPTIONS = [
   { value: 'beginner', label: '입문자', desc: '달리기를 막 시작했어요' },
@@ -26,6 +28,7 @@ const GOAL_OPTIONS = [
 export default function ProfileSetupScreen() {
   const router = useRouter()
   const { updateUser, isLoading } = useAuthStore()
+  const { showToast } = useToast()
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [experienceLevel, setExperienceLevel] = useState('')
   const [primaryGoal, setPrimaryGoal] = useState('')
@@ -43,7 +46,7 @@ export default function ProfileSetupScreen() {
       await updateUser({ experienceLevel: experienceLevel as any, primaryGoal: primaryGoal as any, weeklyTargetKm: km, onboardingCompleted: true })
       router.replace('/(tabs)')
     } catch (e: any) {
-      Alert.alert('오류', e.message ?? '저장에 실패했습니다.')
+      showToast('error', getErrorMessage(e))
     } finally {
       setIsSaving(false)
     }

@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { embeddingUpdateQueue } from '../lib/queue'
+import { AppError } from '../lib/errors'
 import { findSimilarRunnersFromPinecone } from '../workers/embeddingSearch'
 import { UpdateMatchProfileSchema, CreateGroupSchema } from '@runmate/validators'
 import { sendToUser } from '../lib/push'
@@ -164,7 +165,7 @@ export async function matchRoutes(app: FastifyInstance) {
     const { targetId } = request.params as { targetId: string }
 
     if (requesterId === targetId) {
-      return reply.code(400).send({ error: { code: 'INVALID_REQUEST', message: 'Cannot match with yourself' } })
+      return reply.code(400).send({ error: AppError.INVALID_REQUEST })
     }
 
     const existing = await prisma.runnerMatch.findFirst({
@@ -177,7 +178,7 @@ export async function matchRoutes(app: FastifyInstance) {
     })
 
     if (existing) {
-      return reply.code(409).send({ error: { code: 'ALREADY_MATCHED', message: 'Match already exists' } })
+      return reply.code(409).send({ error: AppError.ALREADY_MATCHED })
     }
 
     const match = await prisma.runnerMatch.create({
@@ -210,7 +211,7 @@ export async function matchRoutes(app: FastifyInstance) {
     })
 
     if (!match) {
-      return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Match request not found' } })
+      return reply.code(404).send({ error: AppError.NOT_FOUND })
     }
 
     const updated = await prisma.runnerMatch.update({
@@ -308,9 +309,9 @@ export async function matchRoutes(app: FastifyInstance) {
       include: { _count: { select: { members: true } } },
     })
 
-    if (!group) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Group not found' } })
+    if (!group) return reply.code(404).send({ error: AppError.NOT_FOUND })
     if (group._count.members >= group.maxMembers) {
-      return reply.code(400).send({ error: { code: 'GROUP_FULL', message: 'Group is full' } })
+      return reply.code(400).send({ error: AppError.GROUP_FULL })
     }
 
     await prisma.groupMember.upsert({

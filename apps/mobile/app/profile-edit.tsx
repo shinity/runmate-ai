@@ -5,6 +5,8 @@ import {
 } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
 import { useAuthStore } from '../stores/auth'
+import { useToast } from '../components/Toast'
+import { getErrorMessage } from '../lib/feedback'
 
 const EXPERIENCE_OPTIONS = [
   { value: 'beginner', label: '입문자' },
@@ -25,6 +27,7 @@ const GOAL_OPTIONS = [
 export default function ProfileEditScreen() {
   const router = useRouter()
   const { user, updateUser } = useAuthStore()
+  const { showToast } = useToast()
   const [displayName, setDisplayName] = useState(user?.displayName ?? '')
   const [city, setCity] = useState(user?.city ?? '')
   const [weeklyKm, setWeeklyKm] = useState(String(user?.weeklyTargetKm ?? '20'))
@@ -53,7 +56,7 @@ export default function ProfileEditScreen() {
       })
       router.back()
     } catch (e: any) {
-      Alert.alert('저장 실패', e.message ?? '저장에 실패했습니다.')
+      showToast('error', getErrorMessage(e))
     } finally {
       setIsSaving(false)
     }

@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { runAnalysisQueue, routeArtQueue } from '../lib/queue'
 import { CreateRunSchema, PaginationSchema } from '@runmate/validators'
+import { AppError } from '../lib/errors'
 
 export async function runRoutes(app: FastifyInstance) {
   const authenticate = { preHandler: [app.authenticate] }
@@ -147,7 +148,7 @@ export async function runRoutes(app: FastifyInstance) {
       include: { splits: true },
     })
 
-    if (!run) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Run not found' } })
+    if (!run) return reply.code(404).send({ error: AppError.NOT_FOUND })
 
     return reply.send({ data: run })
   })
@@ -159,7 +160,7 @@ export async function runRoutes(app: FastifyInstance) {
     const body = request.body as { title?: string; notes?: string; isPublic?: boolean }
 
     const run = await prisma.run.findFirst({ where: { id, userId } })
-    if (!run) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Run not found' } })
+    if (!run) return reply.code(404).send({ error: AppError.NOT_FOUND })
 
     const updated = await prisma.run.update({
       where: { id },
@@ -179,7 +180,7 @@ export async function runRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string }
 
     const run = await prisma.run.findFirst({ where: { id, userId } })
-    if (!run) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Run not found' } })
+    if (!run) return reply.code(404).send({ error: AppError.NOT_FOUND })
 
     await prisma.run.delete({ where: { id } })
     return reply.code(204).send()

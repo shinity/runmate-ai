@@ -4,6 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../stores/auth'
 import { api } from '../lib/api'
+import { useToast } from '../components/Toast'
+import { getErrorMessage } from '../lib/feedback'
 
 const DEVICE_LABELS: Record<string, string> = {
   apple_watch: '⌚ Apple Watch',
@@ -17,6 +19,7 @@ const DEVICE_LABELS: Record<string, string> = {
 export default function DevicesScreen() {
   const { user, loadUser } = useAuthStore()
   const qc = useQueryClient()
+  const { showToast } = useToast()
 
   const devices: any[] = (user as any)?.devices ?? []
 
@@ -26,7 +29,7 @@ export default function DevicesScreen() {
       loadUser()
       qc.invalidateQueries({ queryKey: ['sync'] })
     },
-    onError: (e: any) => Alert.alert('오류', e.message ?? '연결 해제에 실패했습니다.'),
+    onError: (e: any) => showToast('error', getErrorMessage(e)),
   })
 
   const AVAILABLE_DEVICES = [
@@ -40,9 +43,9 @@ export default function DevicesScreen() {
       api.post('/sync/devices/connect', { deviceType, deviceId }),
     onSuccess: () => {
       loadUser()
-      Alert.alert('연결 완료', '기기가 연결되었습니다.')
+      showToast('success', '기기가 연결되었습니다.')
     },
-    onError: (e: any) => Alert.alert('오류', e.message ?? '연결에 실패했습니다.'),
+    onError: (e: any) => showToast('error', getErrorMessage(e)),
   })
 
   return (

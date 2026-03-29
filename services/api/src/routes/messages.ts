@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { sendToUser } from '../lib/websocket'
+import { AppError } from '../lib/errors'
 
 export async function messageRoutes(app: FastifyInstance) {
   const authenticate = { preHandler: [app.authenticate] }
@@ -24,7 +25,7 @@ export async function messageRoutes(app: FastifyInstance) {
 
     const match = await verifyMatchAccess(matchId, userId)
     if (!match) {
-      return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Match not found' } })
+      return reply.code(404).send({ error: AppError.NOT_FOUND })
     }
 
     const take = Math.min(Number(limit), 100)
@@ -58,12 +59,12 @@ export async function messageRoutes(app: FastifyInstance) {
     const { content } = request.body as { content: string }
 
     if (!content?.trim()) {
-      return reply.code(400).send({ error: { code: 'INVALID_CONTENT', message: 'Message content is required' } })
+      return reply.code(400).send({ error: AppError.INVALID_CONTENT })
     }
 
     const match = await verifyMatchAccess(matchId, userId)
     if (!match) {
-      return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Match not found' } })
+      return reply.code(404).send({ error: AppError.NOT_FOUND })
     }
 
     const message = await prisma.message.create({
@@ -87,7 +88,7 @@ export async function messageRoutes(app: FastifyInstance) {
 
     const match = await verifyMatchAccess(matchId, userId)
     if (!match) {
-      return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Match not found' } })
+      return reply.code(404).send({ error: AppError.NOT_FOUND })
     }
 
     // 상대방이 보낸 메시지 중 아직 읽지 않은 것들을 읽음 처리

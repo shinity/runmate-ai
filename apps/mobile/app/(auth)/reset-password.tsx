@@ -6,10 +6,13 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../lib/api'
+import { useToast } from '../../components/Toast'
+import { getErrorMessage, SUCCESS_MESSAGES } from '../../lib/feedback'
 
 export default function ResetPasswordScreen() {
   const router = useRouter()
   const { email } = useLocalSearchParams<{ email: string }>()
+  const { showToast } = useToast()
 
   const [code, setCode] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -37,18 +40,10 @@ export default function ResetPasswordScreen() {
         code: code.trim(),
         newPassword,
       })
-      Alert.alert(
-        '완료',
-        '비밀번호가 변경되었습니다',
-        [
-          {
-            text: '확인',
-            onPress: () => router.replace('/(auth)/login'),
-          },
-        ],
-      )
+      showToast('success', SUCCESS_MESSAGES.PASSWORD_RESET_SUCCESS)
+      router.replace('/(auth)/login')
     } catch (e: any) {
-      Alert.alert('오류', e.message ?? '비밀번호 변경에 실패했습니다.')
+      showToast('error', getErrorMessage(e))
     } finally {
       setIsLoading(false)
     }

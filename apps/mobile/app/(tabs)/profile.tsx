@@ -7,10 +7,12 @@ import { api } from '../../lib/api'
 import type { PersonalRecord } from '@runmate/types'
 import { formatPace } from '../../lib/format'
 import { useHealthSync } from '../../hooks/useHealthSync'
+import { useToast } from '../../components/Toast'
 
 export default function ProfileScreen() {
   const router = useRouter()
   const { user, logout } = useAuthStore()
+  const { showToast } = useToast()
   const {
     isSyncing,
     lastSyncAt,
@@ -84,11 +86,11 @@ export default function ProfileScreen() {
   async function handleSyncWorkouts() {
     await syncWorkouts()
     if (syncError) {
-      Alert.alert('동기화 실패', syncError)
+      showToast('error', syncError)
     } else if (syncedCount > 0) {
-      Alert.alert('동기화 완료', `${syncedCount}개의 런이 동기화되었습니다.`)
+      showToast('success', `${syncedCount}개의 런이 동기화되었습니다.`)
     } else {
-      Alert.alert('동기화 완료', '새로 동기화할 런이 없습니다.')
+      showToast('info', '새로 동기화할 런이 없습니다.')
     }
   }
 

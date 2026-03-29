@@ -5,6 +5,7 @@ import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '../lib/prisma'
 import { LoginSchema, RegisterSchema, GoogleAuthSchema } from '@runmate/validators'
 import { sendPasswordResetEmail } from '../lib/email'
+import { AppError } from '../lib/errors'
 
 const googleClient = new OAuth2Client()
 
@@ -14,7 +15,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     const existing = await prisma.user.findUnique({ where: { email: body.email } })
     if (existing) {
-      return reply.code(409).send({ error: { code: 'EMAIL_TAKEN', message: 'Email already registered' } })
+      return reply.code(409).send({ error: AppError.EMAIL_TAKEN })
     }
 
     const passwordHash = await bcrypt.hash(body.password, 12)
@@ -40,16 +41,16 @@ export async function authRoutes(app: FastifyInstance) {
 
     const user = await prisma.user.findUnique({ where: { email: body.email } })
     if (!user) {
-      return reply.code(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' } })
+      return reply.code(401).send({ error: AppError.INVALID_CREDENTIALS })
     }
 
     if (!user.passwordHash) {
-      return reply.code(401).send({ error: { code: 'OAUTH_ACCOUNT', message: 'This account uses Google login. Please sign in with Google.' } })
+      return reply.code(401).send({ error: AppError.OAUTH_ACCOUNT })
     }
 
     const valid = await bcrypt.compare(body.password, user.passwordHash)
     if (!valid) {
-      return reply.code(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid email or password' } })
+      return reply.code(401).send({ error: AppError.INVALID_CREDENTIALS })
     }
 
     await prisma.user.update({ where: { id: user.id }, data: { lastActiveAt: new Date() } })
@@ -74,7 +75,7 @@ export async function authRoutes(app: FastifyInstance) {
       const accessToken = app.jwt.sign({ sub: payload.sub })
       return reply.send({ data: { accessToken, expiresIn: 900 } })
     } catch {
-      return reply.code(401).send({ error: { code: 'INVALID_TOKEN', message: 'Invalid refresh token' } })
+      return reply.code(401).send({ error: AppError.INVALID_TOKEN })
     }
   })
 
@@ -123,11 +124,11 @@ export async function authRoutes(app: FastifyInstance) {
       })
       payload = ticket.getPayload()
     } catch (err) {
-      return reply.code(401).send({ error: { code: 'INVALID_ID_TOKEN', message: 'Google ID token verification failed' } })
+      return reply.code(401).send({ error: AppError.INVALID_ID_TOKEN })
     }
 
     if (!payload || !payload.sub || !payload.email) {
-      return reply.code(401).send({ error: { code: 'INVALID_ID_TOKEN', message: 'Invalid Google token payload' } })
+      return reply.code(401).send({ error: AppError.INVALID_ID_TOKEN })
     }
 
     const { sub: googleId, email, name, picture } = payload
@@ -178,7 +179,7 @@ export async function authRoutes(app: FastifyInstance) {
 
     const user = await prisma.user.findUnique({ where: { email: body.email } })
     if (!user) {
-      return reply.code(400).send({ error: { code: 'INVALID_CODE', message: '유효하지 않은 코드입니다' } })
+      return reply.code(400).send({ error: AppError.INVALID_CODE })
     }
 
     const resetToken = await prisma.passwordResetToken.findFirst({
@@ -191,7 +192,7 @@ export async function authRoutes(app: FastifyInstance) {
     })
 
     if (!resetToken) {
-      return reply.code(400).send({ error: { code: 'INVALID_CODE', message: '유효하지 않은 코드입니다' } })
+      return reply.code(400).send({ error: AppError.INVALID_CODE })
     }
 
     const passwordHash = await bcrypt.hash(body.newPassword, 12)
