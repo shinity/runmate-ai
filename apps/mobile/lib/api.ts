@@ -53,18 +53,18 @@ class ApiClient {
           const retryRes = await fetch(`${API_BASE}${path}`, { ...options, headers })
           const retryJson = await retryRes.json()
           if (!retryRes.ok) {
-            throw new Error((retryJson as ApiError).error?.message ?? 'Request failed')
+            throw retryJson
           }
           return retryJson
         }
       }
       await clearTokens()
-      throw new Error('Session expired')
+      throw { error: { code: 'INVALID_TOKEN', message: '인증이 만료되었어요. 다시 로그인해주세요.' } }
     }
 
     const json = await res.json()
     if (!res.ok) {
-      throw new Error((json as ApiError).error?.message ?? 'Request failed')
+      throw json
     }
 
     return json
