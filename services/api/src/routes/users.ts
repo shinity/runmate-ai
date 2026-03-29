@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { UpdateUserSchema } from '@runmate/validators'
+import { AppError } from '../lib/errors'
 
 export const userRoutes = async (app: FastifyInstance) => {
   const authenticate = { preHandler: [app.authenticate] }
@@ -15,7 +16,7 @@ export const userRoutes = async (app: FastifyInstance) => {
       omit: { passwordHash: true },
     })
 
-    if (!user) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'User not found' } })
+    if (!user) return reply.code(404).send({ error: AppError.NOT_FOUND })
 
     return reply.send({ data: user })
   })
@@ -52,7 +53,7 @@ export const userRoutes = async (app: FastifyInstance) => {
       },
     })
 
-    if (!user) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'User not found' } })
+    if (!user) return reply.code(404).send({ error: AppError.NOT_FOUND })
 
     return reply.send({ data: user })
   })

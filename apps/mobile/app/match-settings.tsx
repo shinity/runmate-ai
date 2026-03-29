@@ -6,6 +6,8 @@ import {
 import { useRouter, Stack } from 'expo-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api'
+import { useToast } from '../components/Toast'
+import { getErrorMessage } from '../lib/feedback'
 
 const STYLE_OPTIONS = [
   { value: 'social', label: '소셜', desc: '대화하며 달려요' },
@@ -24,6 +26,7 @@ const LOOKING_FOR_OPTIONS = [
 export default function MatchSettingsScreen() {
   const router = useRouter()
   const qc = useQueryClient()
+  const { showToast } = useToast()
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['match', 'profile'],
@@ -51,7 +54,7 @@ export default function MatchSettingsScreen() {
       qc.invalidateQueries({ queryKey: ['match'] })
       router.back()
     },
-    onError: (e: any) => Alert.alert('저장 실패', e.message ?? '저장에 실패했습니다.'),
+    onError: (e: any) => showToast('error', getErrorMessage(e)),
   })
 
   if (isLoading) {

@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { runAnalysisQueue } from '../lib/queue'
+import { AppError } from '../lib/errors'
 
 export async function syncRoutes(app: FastifyInstance) {
   const authenticate = { preHandler: [app.authenticate] }
@@ -60,7 +61,7 @@ export async function syncRoutes(app: FastifyInstance) {
     })
 
     if (!device) {
-      return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Device not found' } })
+      return reply.code(404).send({ error: AppError.NOT_FOUND })
     }
 
     // Update sync timestamp

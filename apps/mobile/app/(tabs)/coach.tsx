@@ -6,6 +6,8 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import { useCoachingPlans, useCoachingInsights, useMarkInsightRead, useGeneratePlan } from '../../hooks/useCoaching'
 import type { CoachingInsight, CoachingPlan } from '@runmate/types'
+import { useToast } from '../../components/Toast'
+import { getErrorMessage } from '../../lib/feedback'
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   easy: '🟢 Easy',
@@ -130,6 +132,7 @@ function GeneratePlanModal({ visible, onClose }: { visible: boolean; onClose: ()
   const [weeks, setWeeks] = useState('8')
   const [days, setDays] = useState('4')
   const generatePlan = useGeneratePlan()
+  const { showToast } = useToast()
 
   const GOAL_OPTIONS = [
     { label: '5km 완주', value: '5km 완주를 목표로 달리기 시작하기' },
@@ -164,9 +167,9 @@ function GeneratePlanModal({ visible, onClose }: { visible: boolean; onClose: ()
         currentFitnessLevel: 'moderate',
       })
       onClose()
-      Alert.alert('완료', 'AI가 훈련 계획을 생성했습니다!')
+      showToast('success', 'AI가 훈련 계획을 생성했습니다!')
     } catch (e: any) {
-      Alert.alert('오류', e.message ?? '계획 생성에 실패했습니다.')
+      showToast('error', getErrorMessage(e))
     }
   }
 

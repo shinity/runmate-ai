@@ -3,6 +3,7 @@ import { prisma } from '../lib/prisma'
 import { planAdaptationQueue } from '../lib/queue'
 import { GeneratePlanSchema, PaginationSchema } from '@runmate/validators'
 import { generateTrainingPlan } from '../workers/planGeneration'
+import { AppError } from '../lib/errors'
 
 export async function coachingRoutes(app: FastifyInstance) {
   const authenticate = { preHandler: [app.authenticate] }
@@ -45,7 +46,7 @@ export async function coachingRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string }
 
     const plan = await prisma.coachingPlan.findFirst({ where: { id, userId } })
-    if (!plan) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Plan not found' } })
+    if (!plan) return reply.code(404).send({ error: AppError.NOT_FOUND })
 
     return reply.send({ data: plan })
   })
@@ -57,7 +58,7 @@ export async function coachingRoutes(app: FastifyInstance) {
     const body = request.body as { status?: string }
 
     const plan = await prisma.coachingPlan.findFirst({ where: { id, userId } })
-    if (!plan) return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Plan not found' } })
+    if (!plan) return reply.code(404).send({ error: AppError.NOT_FOUND })
 
     const updated = await prisma.coachingPlan.update({
       where: { id },

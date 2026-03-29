@@ -23,6 +23,7 @@ import { runAnalysisQueue, planAdaptationQueue, embeddingUpdateQueue, routeArtQu
 import { startRunAnalysisWorker } from './workers/runAnalysis.worker'
 import { startRouteArtWorker } from './workers/routeArt.worker'
 import { startEmbeddingUpdateWorker } from './workers/embeddingUpdate.worker'
+import { AppError } from './lib/errors'
 
 const app = Fastify({
   logger: {
@@ -93,17 +94,18 @@ async function bootstrap() {
   app.setErrorHandler((err: any, _request, reply) => {
     if (err.name === 'ZodError' || Array.isArray(err.issues)) {
       return reply.code(400).send({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid request', details: err.issues },
+        error: { ...AppError.VALIDATION_ERROR, details: err.issues },
       })
     }
     if (err.statusCode === 429) {
-      return reply.code(429).send({
-        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'Too many requests' },
-      })
+      return reply.code(429).send({ error: AppError.RATE_LIMIT_EXCEEDED })
     }
     app.log.error(err)
     return reply.code(err.statusCode ?? 500).send({
-      error: { code: 'INTERNAL_ERROR', message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message },
+      error: {
+        ...AppError.INTERNAL_ERROR,
+        message: process.env.NODE_ENV === 'production' ? AppError.INTERNAL_ERROR.message : err.message,
+      },
     })
   })
 

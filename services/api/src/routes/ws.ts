@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { registerConnection, removeConnection, sendToUser } from '../lib/websocket'
+import { AppError } from '../lib/errors'
 
 export async function wsRoutes(app: FastifyInstance) {
   // GET /ws - WebSocket 업그레이드 엔드포인트
@@ -9,7 +10,7 @@ export async function wsRoutes(app: FastifyInstance) {
 
     // JWT 토큰 검증
     if (!token) {
-      socket.send(JSON.stringify({ type: 'error', code: 'UNAUTHORIZED', message: 'Token is required' }))
+      socket.send(JSON.stringify({ type: 'error', ...AppError.INVALID_TOKEN }))
       socket.close(1008, 'Unauthorized')
       return
     }
@@ -19,7 +20,7 @@ export async function wsRoutes(app: FastifyInstance) {
       const decoded = app.jwt.verify<{ sub: string }>(token)
       userId = decoded.sub
     } catch {
-      socket.send(JSON.stringify({ type: 'error', code: 'UNAUTHORIZED', message: 'Invalid token' }))
+      socket.send(JSON.stringify({ type: 'error', ...AppError.INVALID_TOKEN }))
       socket.close(1008, 'Unauthorized')
       return
     }
@@ -37,7 +38,7 @@ export async function wsRoutes(app: FastifyInstance) {
       try {
         payload = JSON.parse(rawData.toString())
       } catch {
-        socket.send(JSON.stringify({ type: 'error', code: 'INVALID_FORMAT', message: 'Invalid JSON format' }))
+        socket.send(JSON.stringify({ type: 'error', code: 'INVALID_FORMAT', message: '메시지 형식이 올바르지 않아요.' }))
         return
       }
 
@@ -45,7 +46,7 @@ export async function wsRoutes(app: FastifyInstance) {
         const { matchId, content } = payload
 
         if (!matchId || !content?.trim()) {
-          socket.send(JSON.stringify({ type: 'error', code: 'INVALID_PAYLOAD', message: 'matchId and content are required' }))
+          socket.send(JSON.stringify({ type: 'error', code: 'INVALID_PAYLOAD', message: '메시지 내용을 입력해주세요.' }))
           return
         }
 
@@ -58,7 +59,7 @@ export async function wsRoutes(app: FastifyInstance) {
         })
 
         if (!match) {
-          socket.send(JSON.stringify({ type: 'error', code: 'NOT_FOUND', message: 'Match not found' }))
+          socket.send(JSON.stringify({ type: 'error', ...AppError.NOT_FOUND }))
           return
         }
 
