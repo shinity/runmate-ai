@@ -66,6 +66,13 @@ vi.mock('../lib/prisma', () => ({
     groupMember: {
       upsert: vi.fn(),
     },
+    passwordResetToken: {
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+    },
+    $transaction: vi.fn().mockImplementation((ops: any[]) => Promise.all(ops)),
   },
 }))
 

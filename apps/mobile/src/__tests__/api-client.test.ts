@@ -68,7 +68,7 @@ describe('ApiClient 401 처리', () => {
     expect(SecureStore.setItemAsync).toHaveBeenCalledWith('access_token', 'new-token')
   })
 
-  it('refresh 실패 시 Session expired 에러', async () => {
+  it('refresh 실패 시 INVALID_TOKEN 에러 객체를 throw한다', async () => {
     SecureStore.getItemAsync.mockImplementation((key: string) => {
       if (key === 'access_token') return Promise.resolve('expired-token')
       if (key === 'refresh_token') return Promise.resolve('bad-refresh')
@@ -79,7 +79,9 @@ describe('ApiClient 401 처리', () => {
       .mockResolvedValueOnce(makeResponse({}, 401))
       .mockResolvedValueOnce(makeResponse({}, 401))  // refresh도 실패
 
-    await expect(api.get('/protected')).rejects.toThrow('Session expired')
+    await expect(api.get('/protected')).rejects.toMatchObject({
+      error: { code: 'INVALID_TOKEN' },
+    })
     expect(SecureStore.deleteItemAsync).toHaveBeenCalledTimes(2) // access + refresh
   })
 })
@@ -98,9 +100,10 @@ describe('ApiClient.post', () => {
     )
   })
 
-  it('서버 에러 시 에러 메시지 throw', async () => {
-    mockFetch.mockResolvedValue(makeResponse({ error: { message: 'EMAIL_TAKEN' } }, 400))
+  it('서버 에러 시 응답 body 객체를 throw한다', async () => {
+    const errorBody = { error: { code: 'EMAIL_TAKEN', message: '이미 사용 중인 이메일이에요.' } }
+    mockFetch.mockResolvedValue(makeResponse(errorBody, 409))
 
-    await expect(api.post('/auth/register', {})).rejects.toThrow('EMAIL_TAKEN')
+    await expect(api.post('/auth/register', {})).rejects.toMatchObject(errorBody)
   })
 })
