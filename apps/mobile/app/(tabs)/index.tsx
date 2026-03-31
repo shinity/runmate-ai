@@ -86,7 +86,7 @@ export default function HomeScreen() {
       {latestRouteArt && (
         <TouchableOpacity
           style={styles.routeArtCard}
-          onPress={() => router.push(`/route-art/${latestRouteArt.id}` as any)}
+          onPress={() => router.push(`/route-art/${latestRouteArt.id}`)}
           activeOpacity={0.85}
         >
           <View style={styles.routeArtCardHeader}>

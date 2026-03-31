@@ -168,7 +168,7 @@ export default function GalleryScreen() {
         renderItem={({ item }) => (
           <GalleryItem
             item={item}
-            onPress={() => router.push(`/route-art/${item.id}` as any)}
+            onPress={() => router.push(`/route-art/${item.id}`)}
           />
         )}
       />

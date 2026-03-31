@@ -77,7 +77,7 @@ export default function AnimateResultScreen() {
   }
 
   function handleRemake() {
-    router.replace(`/route-art/${id}/animate` as any)
+    router.replace(`/route-art/${id}/animate`)
   }
 
   return (

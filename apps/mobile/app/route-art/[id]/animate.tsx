@@ -66,7 +66,7 @@ export default function AnimateScreen() {
         characterPreset: selectedCharacter,
         speed,
       })
-      router.replace(`/route-art/${id}/animate/progress` as any)
+      router.replace(`/route-art/${id}/animate/progress`)
     } catch {
       Alert.alert('오류', '애니메이션 생성 요청에 실패했습니다. 다시 시도해주세요.')
     }

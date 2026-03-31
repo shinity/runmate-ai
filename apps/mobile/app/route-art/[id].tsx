@@ -92,9 +92,9 @@ export default function RouteArtDetailScreen() {
   function handleAnimateBtnPress() {
     if (!typedRun) return
     if (typedRun.animatedRouteArtUrl) {
-      router.push(`/route-art/${typedRun.id}/animate/result` as any)
+      router.push(`/route-art/${typedRun.id}/animate/result`)
     } else {
-      router.push(`/route-art/${typedRun.id}/animate` as any)
+      router.push(`/route-art/${typedRun.id}/animate`)
     }
   }
 

@@ -5,6 +5,7 @@ import {
 } from 'react-native'
 import Constants from 'expo-constants'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 
 const isExpoGo = Constants.appOwnership === 'expo'
 const MapView = isExpoGo ? null : require('react-native-maps').default
@@ -39,6 +40,7 @@ const POLL_INTERVAL_MS = 5000
 
 export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) {
   const pollCountRef = useRef(0)
+  const router = useRouter()
 
   const { data: run, isLoading, isError } = useRunDetail(runId, {
     refetchInterval: (query) => {
@@ -187,6 +189,44 @@ export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) 
               )}
             </View>
 
+            {/* 라우트 아트 */}
+            {run.routeArtUrl ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionHeaderTitle}>라우트 아트</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      onClose()
+                      router.push(`/route-art/${runId}`)
+                    }}
+                  >
+                    <Text style={styles.sectionLink}>상세 보기</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    onClose()
+                    router.push(`/route-art/${runId}`)
+                  }}
+                >
+                  <Image
+                    source={{ uri: run.routeArtUrl }}
+                    style={styles.routeArt}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+              </View>
+            ) : (run.datapoints?.length ?? 0) >= 2 ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>라우트 아트</Text>
+                <View style={styles.routeArtGenerating}>
+                  <ActivityIndicator size="small" color="#3b82f6" />
+                  <Text style={styles.routeArtGeneratingText}>라우트 아트를 만들고 있어요...</Text>
+                </View>
+              </View>
+            ) : null}
+
             {/* 스플릿 */}
             {run.splits && run.splits.length > 0 && (
               <View style={styles.section}>
@@ -218,26 +258,6 @@ export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) 
                 ))}
               </View>
             )}
-
-            {/* 라우트 아트 */}
-            {run.routeArtUrl ? (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>라우트 아트</Text>
-                <Image
-                  source={{ uri: run.routeArtUrl }}
-                  style={styles.routeArt}
-                  resizeMode="cover"
-                />
-              </View>
-            ) : (run.datapoints?.length ?? 0) >= 2 ? (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>라우트 아트</Text>
-                <View style={styles.routeArtGenerating}>
-                  <ActivityIndicator size="small" color="#3b82f6" />
-                  <Text style={styles.routeArtGeneratingText}>라우트 아트를 만들고 있어요...</Text>
-                </View>
-              </View>
-            ) : null}
 
             {/* 공유 버튼 */}
             <View style={styles.shareContainer}>
@@ -449,9 +469,27 @@ const styles = StyleSheet.create({
     width: 40,
     textAlign: 'right',
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionLink: {
+    fontSize: 13,
+    color: '#3b82f6',
+    fontWeight: '600',
+  },
   routeArt: {
     width: '100%',
-    height: 200,
+    height: 300,
     borderRadius: 16,
     backgroundColor: '#1e293b',
   },

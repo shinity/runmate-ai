@@ -31,16 +31,16 @@ export default function AnimateProgressScreen() {
 
   useEffect(() => {
     if (statusData?.status === 'completed') {
-      router.replace(`/route-art/${id}/animate/result` as any)
+      router.replace(`/route-art/${id}/animate/result`)
     }
   }, [statusData?.status, id, router])
 
   function handleCancel() {
-    router.replace(`/route-art/${id}` as any)
+    router.replace(`/route-art/${id}`)
   }
 
   function handleRetry() {
-    router.replace(`/route-art/${id}/animate` as any)
+    router.replace(`/route-art/${id}/animate`)
   }
 
   const isFailed = statusData?.status === 'failed' || isError
