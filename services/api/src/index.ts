@@ -19,9 +19,10 @@ import { matchRoutes } from './routes/matching'
 import { syncRoutes } from './routes/sync'
 import { messageRoutes } from './routes/messages'
 import { wsRoutes } from './routes/ws'
-import { runAnalysisQueue, planAdaptationQueue, embeddingUpdateQueue, routeArtQueue } from './lib/queue'
+import { runAnalysisQueue, planAdaptationQueue, embeddingUpdateQueue, routeArtQueue, animateRouteArtQueue } from './lib/queue'
 import { startRunAnalysisWorker } from './workers/runAnalysis.worker'
 import { startRouteArtWorker } from './workers/routeArt.worker'
+import { startAnimateRouteArtWorker } from './workers/animateRouteArt.worker'
 import { startEmbeddingUpdateWorker } from './workers/embeddingUpdate.worker'
 import { AppError } from './lib/errors'
 
@@ -84,6 +85,7 @@ async function bootstrap() {
       new BullMQAdapter(planAdaptationQueue),
       new BullMQAdapter(embeddingUpdateQueue),
       new BullMQAdapter(routeArtQueue),
+      new BullMQAdapter(animateRouteArtQueue),
     ],
     serverAdapter,
   })
@@ -138,6 +140,9 @@ async function bootstrap() {
   const routeArtWorker = startRouteArtWorker()
   app.log.info('[Workers] routeArt worker started')
 
+  const animateRouteArtWorker = startAnimateRouteArtWorker()
+  app.log.info('[Workers] animateRouteArt worker started')
+
   const embeddingUpdateWorker = startEmbeddingUpdateWorker()
   app.log.info('[Workers] embeddingUpdate worker started')
 
@@ -152,6 +157,7 @@ async function bootstrap() {
   const shutdown = async () => {
     await runAnalysisWorker.close()
     await routeArtWorker.close()
+    await animateRouteArtWorker.close()
     await embeddingUpdateWorker.close()
     await app.close()
     process.exit(0)

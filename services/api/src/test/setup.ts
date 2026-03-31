@@ -22,6 +22,7 @@ vi.mock('../lib/prisma', () => ({
       delete: vi.fn(),
     },
     runSplit: { create: vi.fn() },
+    runDatapoint: { count: vi.fn() },
     coachingPlan: {
       findUnique: vi.fn(),
       findFirst: vi.fn(),
@@ -82,5 +83,6 @@ vi.mock('../lib/queue', () => ({
   planAdaptationQueue: { add: vi.fn().mockResolvedValue({}) },
   embeddingUpdateQueue: { add: vi.fn().mockResolvedValue({}) },
   routeArtQueue: { add: vi.fn().mockResolvedValue({}) },
+  animateRouteArtQueue: { add: vi.fn().mockResolvedValue({ id: 'job-1' }) },
 }))
 

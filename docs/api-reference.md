@@ -306,6 +306,51 @@
 
 ---
 
+### POST /runs/:id/animate
+애니메이션 라우트 아트 생성 요청
+
+**Request**
+```json
+{
+  "backgroundPreset": "city_night",
+  "characterPreset": "runner",
+  "speed": 1.0
+}
+```
+- `backgroundPreset`: `city_night` | `park` | `beach` | `mountain` | `space` | `sunset`
+- `characterPreset`: `runner` | `ninja` | `robot` | `cat` | `unicorn` | `astronaut`
+- `speed`: 0.5 ~ 3.0
+
+**Response** `202`
+```json
+{
+  "data": { "jobId": "job-abc123", "status": "pending" }
+}
+```
+**에러**: `400 INSUFFICIENT_GPS_DATA`, `404 RUN_NOT_FOUND`, `409 ANIMATION_IN_PROGRESS`
+
+---
+
+### GET /runs/:id/animate/status
+애니메이션 생성 상태 폴링
+
+**Response** `200`
+```json
+{
+  "data": {
+    "jobId": "job-abc123",
+    "status": "processing",
+    "step": "rendering_frames",
+    "animatedRouteArtUrl": null
+  }
+}
+```
+- `status`: `pending` | `processing` | `completed` | `failed`
+- `step`: `generating_background` | `rendering_frames` | `encoding_gif` | `null`
+- `animatedRouteArtUrl`: 완료 시 URL, 그 외 `null`
+
+---
+
 ## 코칭 (Coaching)
 
 > 모든 엔드포인트 `Authorization` 필요

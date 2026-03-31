@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
   ScrollView, ActivityIndicator, Image, Dimensions,
@@ -32,8 +33,28 @@ interface RunDetailModalProps {
   onClose: () => void
 }
 
+// 폴링: routeArtUrl이 null이고 datapoints가 있으면 5초마다 최대 6회 재조회
+const MAX_POLL_COUNT = 6
+const POLL_INTERVAL_MS = 5000
+
 export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) {
-  const { data: run, isLoading, isError } = useRunDetail(runId)
+  const pollCountRef = useRef(0)
+
+  const { data: run, isLoading, isError } = useRunDetail(runId, {
+    refetchInterval: (query) => {
+      const data = query.state.data as typeof run
+      if (!data) return false
+      const hasDatapoints = (data.datapoints?.length ?? 0) >= 2
+      const needsArt = !data.routeArtUrl && hasDatapoints
+      if (!needsArt) {
+        pollCountRef.current = 0
+        return false
+      }
+      if (pollCountRef.current >= MAX_POLL_COUNT) return false
+      pollCountRef.current += 1
+      return POLL_INTERVAL_MS
+    },
+  })
 
   const validPoints = (run?.datapoints ?? []).filter(
     (d) => d.lat !== null && d.lng !== null,
@@ -199,7 +220,7 @@ export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) 
             )}
 
             {/* 라우트 아트 */}
-            {run.routeArtUrl && (
+            {run.routeArtUrl ? (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>라우트 아트</Text>
                 <Image
@@ -208,7 +229,15 @@ export default function RunDetailModal({ runId, onClose }: RunDetailModalProps) 
                   resizeMode="cover"
                 />
               </View>
-            )}
+            ) : (run.datapoints?.length ?? 0) >= 2 ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>라우트 아트</Text>
+                <View style={styles.routeArtGenerating}>
+                  <ActivityIndicator size="small" color="#3b82f6" />
+                  <Text style={styles.routeArtGeneratingText}>라우트 아트를 만들고 있어요...</Text>
+                </View>
+              </View>
+            ) : null}
 
             {/* 공유 버튼 */}
             <View style={styles.shareContainer}>
@@ -425,6 +454,21 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 16,
     backgroundColor: '#1e293b',
+  },
+  routeArtGenerating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    height: 200,
+    justifyContent: 'center',
+  },
+  routeArtGeneratingText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '500',
   },
   shareContainer: {
     paddingHorizontal: 16,

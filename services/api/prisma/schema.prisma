@@ -204,6 +204,12 @@ model Run {
   rawGpxUrl   String?
   routeArtUrl String?
 
+  // Animated Route Art
+  animatedRouteArtUrl String?
+  animateJobId        String?
+  animateStatus       String?   // "pending" | "processing" | "completed" | "failed"
+  animateStep         String?   // "generating_background" | "rendering_frames" | "encoding_gif"
+
   // Social
   isPublic Boolean @default(false)
   title    String?

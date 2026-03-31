@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useWeeklyStats } from '../../hooks/useRuns'
+import { useWeeklyStats, useRuns } from '../../hooks/useRuns'
 import { useRecoveryStatus, useCoachingInsights } from '../../hooks/useCoaching'
 import { useAuthStore } from '../../stores/auth'
 import { formatPace, formatDistance } from '../../lib/format'
@@ -12,6 +12,9 @@ export default function HomeScreen() {
   const { data: stats } = useWeeklyStats()
   const { data: recovery } = useRecoveryStatus()
   const { data: insights } = useCoachingInsights()
+
+  const { data: runs } = useRuns()
+  const latestRouteArt = runs?.find((r) => !!r.routeArtUrl) ?? null
 
   const unreadInsights = insights?.filter((i) => !i.readAt).length ?? 0
 
@@ -79,6 +82,32 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* Recent Route Art Card */}
+      {latestRouteArt && (
+        <TouchableOpacity
+          style={styles.routeArtCard}
+          onPress={() => router.push(`/route-art/${latestRouteArt.id}` as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.routeArtCardHeader}>
+            <Text style={styles.cardLabel}>최근 라우트 아트</Text>
+            <Ionicons name="chevron-forward" size={16} color="#64748b" />
+          </View>
+          <Image
+            source={{ uri: latestRouteArt.routeArtUrl! }}
+            style={styles.routeArtImage}
+            resizeMode="cover"
+          />
+          <Text style={styles.routeArtMeta}>
+            {formatDistance(latestRouteArt.distanceMeters)} ·{' '}
+            {new Date(latestRouteArt.startedAt).toLocaleDateString('ko-KR', {
+              month: 'long',
+              day: 'numeric',
+            })}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       {/* AI Insights Banner */}
       {unreadInsights > 0 && (
         <TouchableOpacity style={styles.insightBanner} onPress={() => router.push('/(tabs)/coach')}>
@@ -132,6 +161,29 @@ const styles = StyleSheet.create({
   statItem: { alignItems: 'center', flex: 1 },
   statValue: { fontSize: 22, fontWeight: '700', color: '#f8fafc' },
   statLabel: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  routeArtCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  routeArtCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  routeArtImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+    backgroundColor: '#0f172a',
+  },
+  routeArtMeta: {
+    color: '#94a3b8',
+    fontSize: 13,
+    marginTop: 10,
+  },
   insightBanner: {
     backgroundColor: '#1e3a5f',
     borderRadius: 16,

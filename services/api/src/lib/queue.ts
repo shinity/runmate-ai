@@ -24,6 +24,14 @@ export interface RouteArtJob {
   userId: string
 }
 
+export interface AnimateRouteArtJob {
+  runId: string
+  userId: string
+  backgroundPreset: string  // 'city_night' | 'park' | 'beach' | 'mountain' | 'space' | 'sunset'
+  characterPreset: string   // 'runner' | 'ninja' | 'robot' | 'cat' | 'unicorn' | 'astronaut'
+  speed: number             // 0.5 ~ 3.0
+}
+
 // Queues — third generic is job name type (string keeps it flexible)
 export const runAnalysisQueue = new Queue<RunAnalysisJob, void, string>('run-analysis', {
   connection: redisConnection,
@@ -56,5 +64,15 @@ export const routeArtQueue = new Queue<RouteArtJob, void, string>('route-art', {
   defaultJobOptions: {
     attempts: 2,
     priority: 10,
+  },
+})
+
+export const animateRouteArtQueue = new Queue<AnimateRouteArtJob, void, string>('animate-route-art', {
+  connection: redisConnection,
+  defaultJobOptions: {
+    attempts: 2,
+    backoff: { type: 'exponential', delay: 5000 },
+    removeOnComplete: { count: 100 },
+    removeOnFail: { count: 50 },
   },
 })

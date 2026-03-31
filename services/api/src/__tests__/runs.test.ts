@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { buildApp, signToken } from '../test/app'
 import { prisma } from '../lib/prisma'
-import { runAnalysisQueue, routeArtQueue } from '../lib/queue'
+import { runAnalysisQueue, routeArtQueue, animateRouteArtQueue } from '../lib/queue'
 
 const MOCK_USER_ID = 'user-1'
 const OTHER_USER_ID = 'user-2'
@@ -631,6 +631,154 @@ describe('Run Routes', () => {
 
     it('인증 없이 접근하면 401을 반환한다', async () => {
       const res = await app.inject({ method: 'GET', url: '/api/v1/runs/personal-records' })
+      expect(res.statusCode).toBe(401)
+    })
+  })
+
+  // ─── POST /api/v1/runs/:id/animate ────────────────────────────────────────
+
+  describe('POST /api/v1/runs/:id/animate', () => {
+    const animatePayload = {
+      backgroundPreset: 'city_night',
+      characterPreset: 'runner',
+      speed: 1.0,
+    }
+
+    const mockRunWithDatapoints = {
+      ...mockRun,
+      animateStatus: null,
+      datapoints: [
+        { lat: 37.5, lng: 127.0, altitudeM: null, paceSecPerKm: null },
+        { lat: 37.51, lng: 127.01, altitudeM: null, paceSecPerKm: null },
+      ],
+    }
+
+    it('애니메이션 생성을 요청하고 202를 반환한다', async () => {
+      vi.mocked(prisma.run.findFirst).mockResolvedValue({ ...mockRunWithDatapoints, animateStatus: null } as any)
+      vi.mocked((prisma as any).runDatapoint.count).mockResolvedValue(2)
+      vi.mocked(prisma.run.update).mockResolvedValue({ ...mockRunWithDatapoints, animateStatus: 'pending' } as any)
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/v1/runs/${mockRun.id}/animate`,
+        headers: { authorization: `Bearer ${token}` },
+        payload: animatePayload,
+      })
+
+      expect(res.statusCode).toBe(202)
+      expect(res.json().data.status).toBe('pending')
+      expect(animateRouteArtQueue.add).toHaveBeenCalledWith(
+        'animate',
+        expect.objectContaining({ runId: mockRun.id, userId: MOCK_USER_ID }),
+      )
+    })
+
+    it('이미 처리 중인 경우 409를 반환한다', async () => {
+      vi.mocked(prisma.run.findFirst).mockResolvedValue({
+        ...mockRunWithDatapoints,
+        animateStatus: 'processing',
+      } as any)
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/v1/runs/${mockRun.id}/animate`,
+        headers: { authorization: `Bearer ${token}` },
+        payload: animatePayload,
+      })
+
+      expect(res.statusCode).toBe(409)
+    })
+
+    it('datapoints가 없으면 400을 반환한다', async () => {
+      vi.mocked(prisma.run.findFirst).mockResolvedValue({
+        ...mockRun,
+        animateStatus: null,
+        datapoints: [],
+      } as any)
+      vi.mocked((prisma as any).runDatapoint.count).mockResolvedValue(0)
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/v1/runs/${mockRun.id}/animate`,
+        headers: { authorization: `Bearer ${token}` },
+        payload: animatePayload,
+      })
+
+      expect(res.statusCode).toBe(400)
+    })
+
+    it('다른 유저의 런에 접근하면 404를 반환한다', async () => {
+      // findFirst with { id, userId } 조건이므로 다른 유저는 null 반환
+      vi.mocked(prisma.run.findFirst).mockResolvedValue(null)
+
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/v1/runs/${mockRun.id}/animate`,
+        headers: { authorization: `Bearer ${token}` },
+        payload: animatePayload,
+      })
+
+      expect(res.statusCode).toBe(404)
+    })
+
+    it('인증 없이 접근하면 401을 반환한다', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: `/api/v1/runs/${mockRun.id}/animate`,
+        payload: animatePayload,
+      })
+      expect(res.statusCode).toBe(401)
+    })
+  })
+
+  // ─── GET /api/v1/runs/:id/animate/status ─────────────────────────────────
+
+  describe('GET /api/v1/runs/:id/animate/status', () => {
+    it('애니메이션 상태를 반환한다', async () => {
+      vi.mocked(prisma.run.findFirst).mockResolvedValue({
+        ...mockRun,
+        animateStatus: 'processing',
+        animateStep: 'rendering_frames',
+        animatedRouteArtUrl: null,
+        animateJobId: 'job-1',
+      } as any)
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/runs/${mockRun.id}/animate/status`,
+        headers: { authorization: `Bearer ${token}` },
+      })
+
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.status).toBe('processing')
+      expect(res.json().data.step).toBe('rendering_frames')
+    })
+
+    it('완료 상태에서 animatedRouteArtUrl을 반환한다', async () => {
+      vi.mocked(prisma.run.findFirst).mockResolvedValue({
+        ...mockRun,
+        animateStatus: 'completed',
+        animateStep: null,
+        animatedRouteArtUrl: '/uploads/animated-route-art-run-1.svg',
+        animateJobId: 'job-1',
+      } as any)
+
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/runs/${mockRun.id}/animate/status`,
+        headers: { authorization: `Bearer ${token}` },
+      })
+
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.status).toBe('completed')
+      expect(res.json().data.animatedRouteArtUrl).toBe('/uploads/animated-route-art-run-1.svg')
+    })
+
+    it('인증 없이 접근하면 401을 반환한다', async () => {
+      const res = await app.inject({
+        method: 'GET',
+        url: `/api/v1/runs/${mockRun.id}/animate/status`,
+      })
       expect(res.statusCode).toBe(401)
     })
   })

@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify'
 import { prisma } from '../lib/prisma'
-import { runAnalysisQueue, routeArtQueue } from '../lib/queue'
-import { CreateRunSchema, PaginationSchema } from '@runmate/validators'
+import { runAnalysisQueue, routeArtQueue, animateRouteArtQueue } from '../lib/queue'
+import { CreateRunSchema, PaginationSchema, AnimateRunSchema } from '@runmate/validators'
 import { AppError } from '../lib/errors'
 
 export async function runRoutes(app: FastifyInstance) {
@@ -184,5 +184,94 @@ export async function runRoutes(app: FastifyInstance) {
 
     await prisma.run.delete({ where: { id } })
     return reply.code(204).send()
+  })
+
+  // POST /runs/:id/animate - request animated route art generation
+  app.post('/:id/animate', { ...authenticate }, async (request, reply) => {
+    const userId = (request.user as any).sub
+    const { id } = request.params as { id: string }
+    const body = AnimateRunSchema.parse(request.body)
+
+    const run = await prisma.run.findFirst({
+      where: { id, userId },
+      include: { datapoints: { orderBy: { timestamp: 'asc' }, take: 1 } },
+    })
+
+    if (!run) {
+      return reply.code(404).send({
+        error: { code: 'RUN_NOT_FOUND', message: 'Run not found or not owned by user' },
+      })
+    }
+
+    // Check for in-progress animation job
+    if (run.animateStatus === 'pending' || run.animateStatus === 'processing') {
+      return reply.code(409).send({
+        error: { code: 'ANIMATION_IN_PROGRESS', message: 'An animation job is already in progress for this run' },
+      })
+    }
+
+    // Check for sufficient GPS datapoints (need at least 2)
+    const datapointCount = await prisma.runDatapoint.count({
+      where: { runId: id, lat: { not: null }, lng: { not: null } },
+    })
+    if (datapointCount < 2) {
+      return reply.code(400).send({
+        error: { code: 'INSUFFICIENT_GPS_DATA', message: 'At least 2 GPS datapoints are required' },
+      })
+    }
+
+    // Mark run as pending and queue the job
+    const job = await animateRouteArtQueue.add('animate', {
+      runId: id,
+      userId,
+      backgroundPreset: body.backgroundPreset,
+      characterPreset: body.characterPreset,
+      speed: body.speed,
+    })
+
+    await prisma.run.update({
+      where: { id },
+      data: {
+        animateStatus: 'pending',
+        animateJobId: job.id ?? null,
+        animateStep: null,
+        animatedRouteArtUrl: null,
+      },
+    })
+
+    return reply.code(202).send({
+      data: { jobId: job.id, status: 'pending' },
+    })
+  })
+
+  // GET /runs/:id/animate/status - poll animation progress
+  app.get('/:id/animate/status', { ...authenticate }, async (request, reply) => {
+    const userId = (request.user as any).sub
+    const { id } = request.params as { id: string }
+
+    const run = await prisma.run.findFirst({
+      where: { id, userId },
+      select: {
+        animateStatus: true,
+        animateStep: true,
+        animatedRouteArtUrl: true,
+        animateJobId: true,
+      },
+    })
+
+    if (!run) {
+      return reply.code(404).send({
+        error: { code: 'RUN_NOT_FOUND', message: 'Run not found or not owned by user' },
+      })
+    }
+
+    return reply.send({
+      data: {
+        jobId: run.animateJobId,
+        status: run.animateStatus,
+        step: run.animateStep,
+        animatedRouteArtUrl: run.animatedRouteArtUrl,
+      },
+    })
   })
 }

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, type UseQueryOptions, type Query } from '@tanstack/react-query'
 import { api } from '../lib/api'
 import type { Run, CreateRunDto, RunStats } from '@runmate/types'
 
@@ -49,7 +49,10 @@ export function useRun(id: string) {
   })
 }
 
-export function useRunDetail(id: string | null) {
+export function useRunDetail(
+  id: string | null,
+  options?: Omit<UseQueryOptions<RunDetail>, 'queryKey' | 'queryFn' | 'enabled'>,
+) {
   return useQuery({
     queryKey: ['runs', 'detail', id],
     queryFn: async () => {
@@ -58,6 +61,7 @@ export function useRunDetail(id: string | null) {
       return data
     },
     enabled: !!id,
+    ...options,
   })
 }
 
@@ -77,6 +81,45 @@ export function usePersonalRecords() {
     queryFn: async () => {
       const { data } = await api.get('/runs/personal-records')
       return data
+    },
+  })
+}
+
+export interface AnimateStatusData {
+  status: string
+  step: string | null
+  animatedRouteArtUrl: string | null
+}
+
+export function useCreateAnimation(runId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (params: {
+      backgroundPreset: string
+      characterPreset: string
+      speed: number
+    }) => {
+      const { data } = await api.post(`/runs/${runId}/animate`, params)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['runs', 'detail', runId] })
+    },
+  })
+}
+
+export function useAnimateStatus(runId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['runs', 'animate-status', runId],
+    queryFn: async () => {
+      const { data } = await api.get<AnimateStatusData>(`/runs/${runId}/animate/status`)
+      return data
+    },
+    enabled: !!runId && enabled,
+    refetchInterval: (query: Query<AnimateStatusData>) => {
+      const status = query.state.data?.status
+      if (status === 'completed' || status === 'failed') return false
+      return 3000
     },
   })
 }

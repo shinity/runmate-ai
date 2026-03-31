@@ -102,6 +102,28 @@ describe('useRunDetail', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data?.datapoints).toHaveLength(1)
   })
+
+  it('options를 전달하면 쿼리 옵션이 적용된다 (refetchInterval 등)', async () => {
+    const mockDetail = {
+      id: 'run2',
+      distanceMeters: 3000,
+      routeArtUrl: 'https://example.com/art.svg',
+      datapoints: [],
+      splits: [],
+    }
+    api.get.mockResolvedValue({ data: mockDetail })
+
+    const refetchInterval = jest.fn().mockReturnValue(false)
+    const { result } = renderHook(
+      () => useRunDetail('run2', { refetchInterval }),
+      { wrapper: createWrapper() },
+    )
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data?.routeArtUrl).toBe('https://example.com/art.svg')
+    // refetchInterval 콜백이 호출됐는지 확인
+    expect(refetchInterval).toHaveBeenCalled()
+  })
 })
 
 describe('useWeeklyStats', () => {

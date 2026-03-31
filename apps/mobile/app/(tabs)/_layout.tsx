@@ -51,11 +51,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="match"
+        name="gallery"
         options={{
-          title: '매칭',
+          title: '갤러리',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
+            <Ionicons name="color-palette-outline" size={size} color={color} />
           ),
         }}
       />

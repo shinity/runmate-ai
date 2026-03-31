@@ -91,6 +91,12 @@ export const PaginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
 })
 
+export const AnimateRunSchema = z.object({
+  backgroundPreset: z.enum(['city_night', 'park', 'beach', 'mountain', 'space', 'sunset']),
+  characterPreset: z.enum(['runner', 'ninja', 'robot', 'cat', 'unicorn', 'astronaut']),
+  speed: z.number().min(0.5).max(3.0).default(1.0),
+})
+
 // ─── Coaching ───────────────────────────────────────────────────────────────
 
 export const GeneratePlanSchema = z.object({
@@ -128,3 +134,4 @@ export type GeneratePlanInput = z.infer<typeof GeneratePlanSchema>
 export type UpdateMatchProfileInput = z.infer<typeof UpdateMatchProfileSchema>
 export type CreateGroupInput = z.infer<typeof CreateGroupSchema>
 export type PaginationInput = z.infer<typeof PaginationSchema>
+export type AnimateRunInput = z.infer<typeof AnimateRunSchema>
