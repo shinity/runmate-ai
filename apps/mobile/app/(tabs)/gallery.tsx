@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { Ionicons } from '@expo/vector-icons'
 import { api } from '../../lib/api'
+import { useGalleryStore } from '../../stores/gallery'
 import { formatDistance } from '../../lib/format'
 import type { Run } from '@runmate/types'
 
@@ -35,6 +36,7 @@ function formatShortDate(dateStr: string): string {
 function GalleryItem({ item, onPress }: { item: Run; onPress: () => void }) {
   const hasRouteArt = !!item.routeArtUrl
   const hasGps = item.dataSource !== 'manual'
+  const hasAnimation = !!item.animatedRouteArtUrl
 
   return (
     <TouchableOpacity
@@ -50,6 +52,12 @@ function GalleryItem({ item, onPress }: { item: Run; onPress: () => void }) {
             style={styles.itemImage}
             resizeMode="cover"
           />
+          {/* GIF 뱃지 — animatedRouteArtUrl 있으면 표시 */}
+          {hasAnimation && (
+            <View style={styles.gifBadge}>
+              <Text style={styles.gifBadgeText}>✦ GIF</Text>
+            </View>
+          )}
           <View style={styles.overlay}>
             <Text style={styles.overlayDistance}>{formatDistance(item.distanceMeters)}</Text>
             <Text style={styles.overlayDate}>{formatShortDate(item.startedAt)}</Text>
@@ -77,6 +85,7 @@ function GalleryItem({ item, onPress }: { item: Run; onPress: () => void }) {
 export default function GalleryScreen() {
   const router = useRouter()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const setRouteArtIds = useGalleryStore((s) => s.setRouteArtIds)
 
   const {
     data,
@@ -99,6 +108,12 @@ export default function GalleryScreen() {
   })
 
   const runs = data?.pages.flatMap((page) => page.data) ?? []
+
+  // runs가 변할 때마다 routeArtUrl이 있는 ID만 스토어에 저장
+  useEffect(() => {
+    const ids = runs.filter((r) => !!r.routeArtUrl).map((r) => r.id)
+    setRouteArtIds(ids)
+  }, [runs, setRouteArtIds])
 
   async function handleRefresh() {
     setIsRefreshing(true)
@@ -288,4 +303,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   footerLoader: { paddingVertical: 20 },
+  gifBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(59,130,246,0.85)',
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  gifBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
 })

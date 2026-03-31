@@ -56,7 +56,7 @@
 - [ ] Hugging Face FLUX.1-schnell (무료)로 GPS 경로 아트 이미지 생성
 - [ ] routeArtQueue 워커 완성
 - [ ] Route Art 스타일 선택 (색상 테마, 배경)
-- [ ] Route Art 스와이프 탐색 (갤러리 내 이전/다음)
+- [x] Route Art 스와이프 탐색 (갤러리 내 이전/다음)
 
 ### Animated Route Art — MVP (P2, 스펙: docs/feature-spec-animated-route-art.md)
 - [x] `POST /runs/:id/animate` + `GET /runs/:id/animate/status` 엔드포인트
@@ -69,9 +69,9 @@
 
 ### Animated Route Art — AI 배경 + 확장 (P2)
 - [ ] FLUX.1-schnell AI 배경 생성 연동
-- [ ] 애니메이션 속도 조절 슬라이더
-- [ ] 갤러리 탭 GIF 뱃지 오버레이
-- [ ] 프리셋 배경/캐릭터 추가 (6종 → 12종)
+- [x] 애니메이션 속도 조절 슬라이더
+- [x] 갤러리 탭 GIF 뱃지 오버레이
+- [x] 프리셋 배경/캐릭터 추가 (6종 → 12종)
 - [ ] 경로 색상/두께 커스터마이징
 - [ ] GIF → MP4 비디오 지원 (파일 크기 최적화)
 

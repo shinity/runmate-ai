@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native'
+import Slider from '@react-native-community/slider'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useRunDetail } from '../../../hooks/useRuns'
@@ -34,6 +35,12 @@ const BACKGROUND_PRESETS: BackgroundPreset[] = [
   { id: 'mountain', label: '산길', emoji: '⛰️', color: '#4a5568' },
   { id: 'space', label: '우주', emoji: '🌌', color: '#0a0a14' },
   { id: 'sunset', label: '일몰', emoji: '🌅', color: '#c05621' },
+  { id: 'forest', label: '숲속', emoji: '🌲', color: '#1a3d2b' },
+  { id: 'rain', label: '빗속', emoji: '🌧️', color: '#1e3a5f' },
+  { id: 'snow', label: '설원', emoji: '❄️', color: '#e8f4f8' },
+  { id: 'desert', label: '사막', emoji: '🏜️', color: '#c49a3c' },
+  { id: 'neon', label: '네온', emoji: '💜', color: '#1a0030' },
+  { id: 'aurora', label: '오로라', emoji: '🌌', color: '#003340' },
 ]
 
 const CHARACTER_PRESETS: CharacterPreset[] = [
@@ -43,6 +50,12 @@ const CHARACTER_PRESETS: CharacterPreset[] = [
   { id: 'cat', label: '고양이', emoji: '🐱' },
   { id: 'unicorn', label: '유니콘', emoji: '🦄' },
   { id: 'astronaut', label: '우주인', emoji: '👨‍🚀' },
+  { id: 'fox', label: '여우', emoji: '🦊' },
+  { id: 'bear', label: '곰', emoji: '🐻' },
+  { id: 'dragon', label: '용', emoji: '🐉' },
+  { id: 'ghost', label: '유령', emoji: '👻' },
+  { id: 'alien', label: '외계인', emoji: '👽' },
+  { id: 'fire', label: '불꽃', emoji: '🔥' },
 ]
 
 export default function AnimateScreen() {
@@ -51,7 +64,7 @@ export default function AnimateScreen() {
 
   const [selectedBackground, setSelectedBackground] = useState('city_night')
   const [selectedCharacter, setSelectedCharacter] = useState('runner')
-  const speed = 1.0
+  const [speed, setSpeed] = useState(1.0)
 
   const { data: run, isLoading } = useRunDetail(id ?? null)
   const createAnimation = useCreateAnimation(id ?? '')
@@ -171,6 +184,25 @@ export default function AnimateScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {/* 속도 설정 */}
+        <Text style={styles.sectionTitle}>애니메이션 속도</Text>
+        <View style={styles.sliderContainer}>
+          <Text style={styles.sliderLabel}>느리게</Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={0.5}
+            maximumValue={2.0}
+            step={0.5}
+            value={speed}
+            onValueChange={setSpeed}
+            minimumTrackTintColor="#3b82f6"
+            maximumTrackTintColor="#334155"
+            thumbTintColor="#3b82f6"
+          />
+          <Text style={styles.sliderLabel}>빠르게</Text>
+        </View>
+        <Text style={styles.sliderValue}>{speed.toFixed(1)}x</Text>
       </ScrollView>
 
       {/* 생성하기 버튼 */}
@@ -330,5 +362,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 17,
     fontWeight: '700',
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 4,
+  },
+  slider: {
+    flex: 1,
+    height: 40,
+  },
+  sliderLabel: {
+    color: '#64748b',
+    fontSize: 12,
+    fontWeight: '600',
+    width: 36,
+    textAlign: 'center',
+  },
+  sliderValue: {
+    color: '#3b82f6',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 28,
   },
 })

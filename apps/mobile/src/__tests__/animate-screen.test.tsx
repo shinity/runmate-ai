@@ -14,6 +14,9 @@ jest.mock('expo-router', () => ({
 // @expo/vector-icons mock
 jest.mock('@expo/vector-icons', () => ({ Ionicons: 'Ionicons' }))
 
+// @react-native-community/slider mock
+jest.mock('@react-native-community/slider', () => 'Slider')
+
 // hooks/useRuns mock
 jest.mock('../../hooks/useRuns', () => ({
   useRunDetail: jest.fn(),
@@ -61,24 +64,47 @@ describe('AnimateScreen', () => {
     expect(screen.getByText('애니메이션 만들기')).toBeTruthy()
   })
 
-  it('배경 스타일 6종을 표시한다', () => {
+  it('배경 스타일 12종을 표시한다', () => {
     render(<AnimateScreen />, { wrapper: createWrapper() })
+    // 기존 6종
     expect(screen.getByText('도시 야경')).toBeTruthy()
     expect(screen.getByText('공원')).toBeTruthy()
     expect(screen.getByText('해변')).toBeTruthy()
     expect(screen.getByText('산길')).toBeTruthy()
     expect(screen.getByText('우주')).toBeTruthy()
     expect(screen.getByText('일몰')).toBeTruthy()
+    // 추가 6종
+    expect(screen.getByText('숲속')).toBeTruthy()
+    expect(screen.getByText('빗속')).toBeTruthy()
+    expect(screen.getByText('설원')).toBeTruthy()
+    expect(screen.getByText('사막')).toBeTruthy()
+    expect(screen.getByText('네온')).toBeTruthy()
+    expect(screen.getByText('오로라')).toBeTruthy()
   })
 
-  it('캐릭터 6종을 표시한다', () => {
+  it('캐릭터 12종을 표시한다', () => {
     render(<AnimateScreen />, { wrapper: createWrapper() })
+    // 기존 6종
     expect(screen.getByText('러너')).toBeTruthy()
     expect(screen.getByText('닌자')).toBeTruthy()
     expect(screen.getByText('로봇')).toBeTruthy()
     expect(screen.getByText('고양이')).toBeTruthy()
     expect(screen.getByText('유니콘')).toBeTruthy()
     expect(screen.getByText('우주인')).toBeTruthy()
+    // 추가 6종
+    expect(screen.getByText('여우')).toBeTruthy()
+    expect(screen.getByText('곰')).toBeTruthy()
+    expect(screen.getByText('용')).toBeTruthy()
+    expect(screen.getByText('유령')).toBeTruthy()
+    expect(screen.getByText('외계인')).toBeTruthy()
+    expect(screen.getByText('불꽃')).toBeTruthy()
+  })
+
+  it('속도 슬라이더와 기본 1.0x 표시를 렌더링한다', () => {
+    render(<AnimateScreen />, { wrapper: createWrapper() })
+    expect(screen.getByText('1.0x')).toBeTruthy()
+    expect(screen.getByText('느리게')).toBeTruthy()
+    expect(screen.getByText('빠르게')).toBeTruthy()
   })
 
   it('생성하기 버튼 탭 시 mutateAsync 호출 후 progress로 이동한다', async () => {

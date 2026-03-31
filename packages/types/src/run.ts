@@ -39,6 +39,7 @@ export interface Run {
   dataSource: DataSource
   rawGpxUrl: string | null
   routeArtUrl: string | null
+  animatedRouteArtUrl: string | null
 
   // Social
   isPublic: boolean

@@ -85,6 +85,52 @@ function buildBackgroundDefs(preset: string): string {
       <circle cx="35" cy="30" r="1.1" fill="#fff" opacity="0.6"/>
       <circle cx="25" cy="22" r="0.6" fill="#fffbcc" opacity="0.8"/>
     </pattern>`
+    case 'forest':
+      return `
+    <linearGradient id="bg_grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a3d2b"/>
+      <stop offset="100%" stop-color="#2d5a1b"/>
+    </linearGradient>`
+    case 'rain':
+      return `
+    <linearGradient id="bg_grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a5f"/>
+      <stop offset="100%" stop-color="#2d4a6e"/>
+    </linearGradient>
+    <pattern id="rain_drops" width="20" height="20" patternUnits="userSpaceOnUse">
+      <line x1="10" y1="0" x2="8" y2="8" stroke="#60a5fa" stroke-width="0.8" opacity="0.5"/>
+      <line x1="3" y1="5" x2="1" y2="13" stroke="#60a5fa" stroke-width="0.8" opacity="0.4"/>
+      <line x1="17" y1="10" x2="15" y2="18" stroke="#60a5fa" stroke-width="0.8" opacity="0.5"/>
+    </pattern>`
+    case 'snow':
+      return `
+    <linearGradient id="bg_grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#dbeafe"/>
+      <stop offset="100%" stop-color="#e8f4f8"/>
+    </linearGradient>`
+    case 'desert':
+      return `
+    <linearGradient id="bg_grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#c49a3c"/>
+      <stop offset="100%" stop-color="#d4a845"/>
+    </linearGradient>`
+    case 'neon':
+      return `
+    <linearGradient id="bg_grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a0030"/>
+      <stop offset="100%" stop-color="#2d0050"/>
+    </linearGradient>`
+    case 'aurora':
+      return `
+    <linearGradient id="bg_grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#003340"/>
+      <stop offset="50%" stop-color="#004d5e"/>
+      <stop offset="100%" stop-color="#003340"/>
+    </linearGradient>
+    <pattern id="aurora_waves" width="100" height="60" patternUnits="userSpaceOnUse">
+      <path d="M0 30 Q25 10 50 30 Q75 50 100 30" stroke="#34d399" stroke-width="2" fill="none" opacity="0.3"/>
+      <path d="M0 40 Q25 20 50 40 Q75 60 100 40" stroke="#6ee7b7" stroke-width="1.5" fill="none" opacity="0.2"/>
+    </pattern>`
     case 'sunset':
     default:
       return `
@@ -97,10 +143,17 @@ function buildBackgroundDefs(preset: string): string {
 }
 
 function buildBackgroundRect(preset: string, W: number, H: number): string {
-  const hasStars = preset === 'city_night' || preset === 'space'
   const base = `<rect width="${W}" height="${H}" fill="url(#bg_grad)"/>`
-  const stars = hasStars ? `<rect width="${W}" height="${H}" fill="url(#stars)"/>` : ''
-  return base + stars
+  if (preset === 'city_night' || preset === 'space') {
+    return base + `<rect width="${W}" height="${H}" fill="url(#stars)"/>`
+  }
+  if (preset === 'rain') {
+    return base + `<rect width="${W}" height="${H}" fill="url(#rain_drops)"/>`
+  }
+  if (preset === 'aurora') {
+    return base + `<rect width="${W}" height="${H}" fill="url(#aurora_waves)"/>`
+  }
+  return base
 }
 
 // ─── Character sprites (SVG group, centered at 0,0) ───────────────────────
@@ -142,6 +195,57 @@ function buildCharacterSprite(preset: string): string {
         <circle cx="0" cy="-18" r="6"  fill="#90caf9" opacity="0.7"/>
         <rect x="-8" y="-8" width="16" height="18" rx="4" fill="#f5f5f5" stroke="#b0bec5" stroke-width="1"/>
         <rect x="-4" y="-5" width="8" height="4" rx="1" fill="#42a5f5" opacity="0.6"/>
+      </g>`
+    case 'fox':
+      return `<g id="char">
+        <circle cx="0" cy="-18" r="8" fill="#fb923c"/>
+        <polygon points="-8,-26 -4,-18 0,-22" fill="#fb923c"/>
+        <polygon points="8,-26 4,-18 0,-22"   fill="#fb923c"/>
+        <circle cx="-3" cy="-19" r="1.5" fill="#1e293b"/>
+        <circle cx="3"  cy="-19" r="1.5" fill="#1e293b"/>
+        <rect x="-5" y="-10" width="10" height="14" rx="2" fill="#fdba74"/>
+      </g>`
+    case 'bear':
+      return `<g id="char">
+        <circle cx="0" cy="-18" r="9" fill="#92400e"/>
+        <circle cx="-7" cy="-25" r="3" fill="#92400e"/>
+        <circle cx="7"  cy="-25" r="3" fill="#92400e"/>
+        <circle cx="-3" cy="-18" r="1.5" fill="#1e293b"/>
+        <circle cx="3"  cy="-18" r="1.5" fill="#1e293b"/>
+        <ellipse cx="0" cy="-14" rx="2.5" ry="1.5" fill="#fbbf24"/>
+        <rect x="-6" y="-9" width="12" height="15" rx="2" fill="#a16207"/>
+      </g>`
+    case 'dragon':
+      return `<g id="char">
+        <ellipse cx="0" cy="-17" rx="8" ry="7" fill="#16a34a"/>
+        <polygon points="-6,-24 -4,-18 -9,-20" fill="#15803d"/>
+        <polygon points="6,-24 4,-18 9,-20"    fill="#15803d"/>
+        <circle cx="-3" cy="-18" r="2" fill="#fbbf24"/>
+        <circle cx="3"  cy="-18" r="2" fill="#fbbf24"/>
+        <rect x="-6" y="-10" width="12" height="15" rx="2" fill="#15803d"/>
+      </g>`
+    case 'ghost':
+      return `<g id="char">
+        <ellipse cx="0" cy="-16" rx="9" ry="11" fill="rgba(248,250,252,0.9)"/>
+        <circle cx="-3" cy="-18" r="2" fill="#1e293b"/>
+        <circle cx="3"  cy="-18" r="2" fill="#1e293b"/>
+        <path d="M-3,-12 Q0,-9 3,-12" stroke="#1e293b" stroke-width="1.5" fill="none"/>
+        <path d="M-9,-5 Q-6,0 -3,-5 Q0,0 3,-5 Q6,0 9,-5" stroke="rgba(248,250,252,0.9)" stroke-width="2" fill="none"/>
+      </g>`
+    case 'alien':
+      return `<g id="char">
+        <ellipse cx="0" cy="-17" rx="9" ry="8" fill="#4ade80"/>
+        <ellipse cx="-3" cy="-18" rx="3" ry="2" fill="#1e293b"/>
+        <ellipse cx="3"  cy="-18" rx="3" ry="2" fill="#1e293b"/>
+        <circle cx="-3" cy="-18" r="1.2" fill="#60a5fa"/>
+        <circle cx="3"  cy="-18" r="1.2" fill="#60a5fa"/>
+        <path d="-3,-12 Q0,-9 3,-12" stroke="#1e293b" stroke-width="1.5" fill="none"/>
+        <rect x="-6" y="-9" width="12" height="14" rx="2" fill="#22c55e"/>
+      </g>`
+    case 'fire':
+      return `<g id="char">
+        <path d="M0,-28 Q-2,-20 2,-18 Q-1,-18 0,-14 Q-3,-17 -2,-12 Q-5,-15 -4,-9 Q-6,-7 -5,-3 Q-4,3 0,3 Q4,3 5,-3 Q6,-7 4,-9 Q5,-15 2,-12 Q3,-17 0,-14 Q1,-18 -2,-18 Q2,-20 0,-28Z" fill="#f97316"/>
+        <path d="M0,-22 Q-1,-16 1,-14 Q0,-11 0,-8 Q-2,-10 -1,-6 Q1,-4 0,0" stroke="#fbbf24" stroke-width="1" fill="none" opacity="0.7"/>
       </g>`
     case 'runner':
     default:

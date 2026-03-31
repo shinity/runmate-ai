@@ -23,6 +23,13 @@ jest.mock('../../lib/api', () => ({
   api: { get: jest.fn() },
 }))
 
+// stores/gallery mock
+jest.mock('../../stores/gallery', () => ({
+  useGalleryStore: jest.fn((selector: any) =>
+    selector({ routeArtIds: [], setRouteArtIds: jest.fn() })
+  ),
+}))
+
 // useInfiniteQuery mock — gallery.tsx가 사용하는 TanStack Query 훅만 교체
 jest.mock('@tanstack/react-query', () => {
   const actual = jest.requireActual('@tanstack/react-query')
@@ -152,5 +159,59 @@ describe('GalleryScreen', () => {
     render(<GalleryScreen />, { wrapper: createWrapper() })
 
     expect(screen.getByText('GPS 없음')).toBeTruthy()
+  })
+
+  it('animatedRouteArtUrl이 있는 런은 GIF 뱃지를 표시한다', () => {
+    useInfiniteQuery.mockReturnValue({
+      data: {
+        pages: [{
+          data: [{
+            id: 'run4',
+            routeArtUrl: 'https://example.com/art.svg',
+            animatedRouteArtUrl: 'https://example.com/animated.svg',
+            distanceMeters: 5000,
+            startedAt: '2026-03-29T07:00:00Z',
+            dataSource: 'app_native',
+          }],
+          meta: { hasMore: false },
+        }],
+      },
+      isLoading: false,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    })
+
+    render(<GalleryScreen />, { wrapper: createWrapper() })
+
+    expect(screen.getByText('✦ GIF')).toBeTruthy()
+  })
+
+  it('animatedRouteArtUrl이 없는 런은 GIF 뱃지를 표시하지 않는다', () => {
+    useInfiniteQuery.mockReturnValue({
+      data: {
+        pages: [{
+          data: [{
+            id: 'run5',
+            routeArtUrl: 'https://example.com/art.svg',
+            animatedRouteArtUrl: null,
+            distanceMeters: 5000,
+            startedAt: '2026-03-30T07:00:00Z',
+            dataSource: 'app_native',
+          }],
+          meta: { hasMore: false },
+        }],
+      },
+      isLoading: false,
+      fetchNextPage: jest.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      refetch: jest.fn(),
+    })
+
+    render(<GalleryScreen />, { wrapper: createWrapper() })
+
+    expect(screen.queryByText('✦ GIF')).toBeNull()
   })
 })

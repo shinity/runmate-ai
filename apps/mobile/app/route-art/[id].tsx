@@ -17,6 +17,7 @@ import { useRunDetail } from '../../hooks/useRuns'
 import { formatDistance, formatDuration, formatPace } from '../../lib/format'
 import RunDetailModal from '../../components/RunDetailModal'
 import { useSaveImage } from '../../hooks/useSaveImage'
+import { useGalleryStore } from '../../stores/gallery'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 const ART_SIZE = SCREEN_WIDTH - 32
@@ -49,6 +50,11 @@ export default function RouteArtDetailScreen() {
   const [showRunDetail, setShowRunDetail] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
   const { viewRef, isSaving, saveToLibrary, captureAsUri } = useSaveImage()
+
+  const routeArtIds = useGalleryStore((s) => s.routeArtIds)
+  const currentIndex = routeArtIds.indexOf(id ?? '')
+  const prevId = currentIndex > 0 ? routeArtIds[currentIndex - 1] : null
+  const nextId = currentIndex < routeArtIds.length - 1 ? routeArtIds[currentIndex + 1] : null
 
   const { data: run, isLoading, isError } = useRunDetail(id ?? null)
   const typedRun = run as RunDetailWithAnimation | undefined
@@ -164,6 +170,33 @@ export default function RouteArtDetailScreen() {
             )}
           </View>
 
+          {/* 이전/다음 탐색 (갤러리 컨텍스트가 있을 때만 표시) */}
+          {routeArtIds.length > 1 && (prevId || nextId) && (
+            <View style={styles.navRow}>
+              <TouchableOpacity
+                style={[styles.navBtn, !prevId && styles.navBtnDisabled]}
+                onPress={() => prevId && router.replace(`/route-art/${prevId}`)}
+                disabled={!prevId}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={18} color={prevId ? '#f8fafc' : '#334155'} />
+                <Text style={[styles.navBtnText, !prevId && styles.navBtnTextDisabled]}>이전</Text>
+              </TouchableOpacity>
+              <Text style={styles.navCount}>
+                {currentIndex + 1} / {routeArtIds.length}
+              </Text>
+              <TouchableOpacity
+                style={[styles.navBtn, !nextId && styles.navBtnDisabled]}
+                onPress={() => nextId && router.replace(`/route-art/${nextId}`)}
+                disabled={!nextId}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.navBtnText, !nextId && styles.navBtnTextDisabled]}>다음</Text>
+                <Ionicons name="chevron-forward" size={18} color={nextId ? '#f8fafc' : '#334155'} />
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* 런 요약 */}
           <View style={styles.summaryCard}>
             <Text style={styles.summaryDate}>{formatDate(typedRun.startedAt)}</Text>
@@ -276,6 +309,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   retryBtnText: { color: '#94a3b8', fontSize: 15, fontWeight: '600' },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  navBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#1e293b',
+  },
+  navBtnDisabled: {
+    backgroundColor: '#0f172a',
+  },
+  navBtnText: {
+    color: '#f8fafc',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  navBtnTextDisabled: {
+    color: '#334155',
+  },
+  navCount: {
+    color: '#64748b',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   artContainer: {
     margin: 16,
     borderRadius: 20,
