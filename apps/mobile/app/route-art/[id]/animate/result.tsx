@@ -15,9 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useRunDetail } from '../../../../hooks/useRuns'
 import { formatDistance, formatDuration, formatPace } from '../../../../lib/format'
-
-// TODO: expo-media-library 설치 후 아래 주석을 해제하여 저장 기능 활성화
-// import * as MediaLibrary from 'expo-media-library'
+import { useSaveImage } from '../../../../hooks/useSaveImage'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 const ART_SIZE = SCREEN_WIDTH - 32
@@ -46,6 +44,7 @@ export default function AnimateResultScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const [isSharing, setIsSharing] = useState(false)
+  const { viewRef, isSaving, saveToLibrary, captureAsUri } = useSaveImage()
 
   const { data: run, isLoading, isError } = useRunDetail(id ?? null)
   const animatedRun = run as RunDetailWithAnimation | undefined
@@ -58,8 +57,11 @@ export default function AnimateResultScreen() {
       const pace = formatPace(animatedRun.avgPaceSecPerKm)
       const message = `${distanceKm}km를 ${pace}/km 페이스로 달렸습니다! 애니메이션으로 확인해보세요. #RunMate #애니메이션라우트아트`
 
+      const capturedUri = await captureAsUri()
       const shareOptions: Parameters<typeof Share.share>[0] = { message }
-      if (animatedRun.animatedRouteArtUrl) {
+      if (capturedUri) {
+        shareOptions.url = capturedUri
+      } else if (animatedRun.animatedRouteArtUrl) {
         shareOptions.url = animatedRun.animatedRouteArtUrl
       }
       await Share.share(shareOptions)
@@ -72,8 +74,8 @@ export default function AnimateResultScreen() {
     }
   }
 
-  function handleSave() {
-    Alert.alert('준비 중', '저장 기능은 곧 지원될 예정입니다.')
+  async function handleSave() {
+    await saveToLibrary()
   }
 
   function handleRemake() {
@@ -114,7 +116,7 @@ export default function AnimateResultScreen() {
         <>
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* 애니메이션 이미지 */}
-            <View style={styles.artContainer}>
+            <View style={styles.artContainer} ref={viewRef as any}>
               {animatedRun.animatedRouteArtUrl ? (
                 <Image
                   source={{ uri: animatedRun.animatedRouteArtUrl }}
@@ -169,12 +171,19 @@ export default function AnimateResultScreen() {
           {/* 하단 버튼 영역 */}
           <View style={styles.actionBar}>
             <TouchableOpacity
-              style={styles.actionBtn}
+              style={[styles.actionBtn, isSaving && styles.actionBtnDisabled]}
               onPress={handleSave}
+              disabled={isSaving}
               activeOpacity={0.8}
             >
-              <Ionicons name="download-outline" size={22} color="#f8fafc" />
-              <Text style={styles.actionBtnText}>저장하기</Text>
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#f8fafc" />
+              ) : (
+                <>
+                  <Ionicons name="download-outline" size={22} color="#f8fafc" />
+                  <Text style={styles.actionBtnText}>저장하기</Text>
+                </>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, styles.actionBtnPrimary]}
@@ -320,6 +329,9 @@ const styles = StyleSheet.create({
   },
   actionBtnPrimary: {
     backgroundColor: '#3b82f6',
+  },
+  actionBtnDisabled: {
+    opacity: 0.5,
   },
   actionBtnText: {
     color: '#f8fafc',

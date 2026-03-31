@@ -48,8 +48,8 @@
 
 ### 라우트 아트 고도화 (P1)
 - [x] RunDetailModal Route Art 섹션 강화 (위치 이동, 크기 300px, 탭으로 상세 이동)
-- [ ] 카메라롤 저장 (expo-media-library)
-- [ ] SVG → PNG 변환 공유 (react-native-view-shot)
+- [x] 카메라롤 저장 (expo-media-library)
+- [x] SVG → PNG 변환 공유 (react-native-view-shot)
 - [x] 매칭 기능 → 프로필 하위 이동 ("준비 중" 라벨)
 
 ### 라우트 아트 AI 이미지 (P2)

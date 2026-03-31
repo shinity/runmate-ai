@@ -16,9 +16,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useRunDetail } from '../../hooks/useRuns'
 import { formatDistance, formatDuration, formatPace } from '../../lib/format'
 import RunDetailModal from '../../components/RunDetailModal'
-
-// TODO: expo-media-library 설치 후 아래 주석을 해제하여 저장 기능 활성화
-// import * as MediaLibrary from 'expo-media-library'
+import { useSaveImage } from '../../hooks/useSaveImage'
 
 const SCREEN_WIDTH = Dimensions.get('window').width
 const ART_SIZE = SCREEN_WIDTH - 32
@@ -49,22 +47,14 @@ export default function RouteArtDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const [showRunDetail, setShowRunDetail] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
+  const { viewRef, isSaving, saveToLibrary, captureAsUri } = useSaveImage()
 
   const { data: run, isLoading, isError } = useRunDetail(id ?? null)
   const typedRun = run as RunDetailWithAnimation | undefined
 
   async function handleSave() {
-    if (!typedRun?.routeArtUrl) return
-    setIsSaving(true)
-    try {
-      Alert.alert('준비 중', '이미지 저장 기능은 곧 지원될 예정입니다.')
-    } catch {
-      Alert.alert('저장 실패', '이미지 저장 중 오류가 발생했습니다.')
-    } finally {
-      setIsSaving(false)
-    }
+    await saveToLibrary()
   }
 
   async function handleShare() {
@@ -75,8 +65,11 @@ export default function RouteArtDetailScreen() {
       const pace = formatPace(typedRun.avgPaceSecPerKm)
       const message = `${distanceKm}km를 ${pace}/km 페이스로 달렸습니다! #RunMate #라우트아트`
 
+      const capturedUri = await captureAsUri()
       const shareOptions: Parameters<typeof Share.share>[0] = { message }
-      if (typedRun.routeArtUrl) {
+      if (capturedUri) {
+        shareOptions.url = capturedUri
+      } else if (typedRun.routeArtUrl) {
         shareOptions.url = typedRun.routeArtUrl
       }
       await Share.share(shareOptions)
@@ -156,7 +149,7 @@ export default function RouteArtDetailScreen() {
       {!isLoading && !isError && typedRun && (
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* Route Art 이미지 */}
-          <View style={styles.artContainer}>
+          <View style={styles.artContainer} ref={viewRef as any}>
             {typedRun.routeArtUrl ? (
               <Image
                 source={{ uri: typedRun.routeArtUrl }}
