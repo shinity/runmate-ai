@@ -214,6 +214,18 @@ export default function ProfileScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.settingRow, styles.settingRowBorder]}
+          onPress={() => Alert.alert('준비 중', '러닝메이트 매칭 기능은 곧 출시됩니다.')}
+        >
+          <View style={styles.settingLabelRow}>
+            <Text style={styles.settingLabel}>러닝메이트 매칭</Text>
+            <View style={styles.comingSoonBadge}>
+              <Text style={styles.comingSoonText}>준비 중</Text>
+            </View>
+          </View>
+          <Text style={styles.settingArrow}>›</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.settingRow, styles.settingRowBorder]}
           onPress={() => Alert.alert('로그아웃', '로그아웃 하시겠어요?', [
             { text: '취소', style: 'cancel' },
             { text: '로그아웃', style: 'destructive', onPress: logout },
@@ -247,6 +259,9 @@ const styles = StyleSheet.create({
   settingRowBorder: { borderTopWidth: 1, borderTopColor: '#334155' },
   settingLabel: { color: '#e2e8f0', fontSize: 15 },
   settingArrow: { color: '#64748b', fontSize: 20 },
+  settingLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  comingSoonBadge: { backgroundColor: '#1d4ed820', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: '#3b82f640' },
+  comingSoonText: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
 
   // 건강 앱 연동 섹션
   healthHeader: { padding: 16, gap: 12 },
