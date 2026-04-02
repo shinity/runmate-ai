@@ -14,7 +14,9 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterEnv": ["<rootDir>/jest.setup.ts"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/jest.setup.ts"
+    ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|zustand|@tanstack)"
     ],
@@ -25,6 +27,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/slider": "5.0.1",
     "@runmate/types": "*",
     "@runmate/validators": "*",
     "@tanstack/react-query": "^5.64.0",
@@ -33,6 +36,7 @@
     "expo-auth-session": "^55.0.11-canary-20260328-2049187",
     "expo-linking": "~8.0.11",
     "expo-location": "~19.0.8",
+    "expo-media-library": "~18.2.1",
     "expo-notifications": "~0.32.16",
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
@@ -47,6 +51,7 @@
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-view-shot": "4.0.3",
     "react-native-worklets": "^0.8.1",
     "tailwindcss": "^3.4.17",
     "zod": "^3.24.1",
