@@ -39,5 +39,9 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "dependencies": {
+    "apple-signin-auth": "^2.0.0",
+    "react-native-worklets": "^0.8.1"
+  }
 }

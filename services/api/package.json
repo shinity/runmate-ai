@@ -30,6 +30,7 @@
     "@prisma/client": "^6.2.1",
     "@runmate/types": "*",
     "@runmate/validators": "*",
+    "apple-signin-auth": "^2.0.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.34.4",
     "fastify": "^5.2.1",

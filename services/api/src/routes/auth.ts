@@ -3,7 +3,7 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { OAuth2Client } from 'google-auth-library'
 import { prisma } from '../lib/prisma'
-import { LoginSchema, RegisterSchema, GoogleAuthSchema } from '@runmate/validators'
+import { LoginSchema, RegisterSchema, GoogleAuthSchema, AppleAuthSchema } from '@runmate/validators'
 import { sendPasswordResetEmail } from '../lib/email'
 import { AppError } from '../lib/errors'
 
@@ -164,6 +164,66 @@ export async function authRoutes(app: FastifyInstance) {
 
     const statusCode = existingByEmail ? 200 : 201
     return reply.code(statusCode).send({
+      data: { user, tokens: { accessToken, refreshToken, expiresIn: 900 } },
+    })
+  })
+
+  app.post('/apple', async (request, reply) => {
+    const body = AppleAuthSchema.parse(request.body)
+
+    let appleId: string
+    try {
+      const { verifyIdToken } = await import('apple-signin-auth')
+      const payload = await verifyIdToken(body.identityToken, {
+        audience: process.env.APPLE_BUNDLE_ID,
+        ignoreExpiration: false,
+      })
+      appleId = payload.sub
+    } catch {
+      return reply.code(401).send({ error: AppError.INVALID_ID_TOKEN })
+    }
+
+    const givenName = body.fullName?.givenName ?? null
+    const familyName = body.fullName?.familyName ?? null
+    const fullName = [givenName, familyName].filter(Boolean).join(' ') || null
+
+    const existingByApple = await prisma.user.findUnique({ where: { appleId } })
+
+    let user
+    if (existingByApple) {
+      user = await prisma.user.update({
+        where: { id: existingByApple.id },
+        data: { lastActiveAt: new Date() },
+        select: { id: true, email: true, displayName: true, avatarUrl: true, createdAt: true },
+      })
+    } else {
+      // Apple은 최초 로그인에만 email을 제공함
+      const email = body.user ?? `apple_${appleId}@privaterelay.appleid.com`
+      const existingByEmail = await prisma.user.findUnique({ where: { email } })
+
+      if (existingByEmail) {
+        user = await prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: { appleId, lastActiveAt: new Date() },
+          select: { id: true, email: true, displayName: true, avatarUrl: true, createdAt: true },
+        })
+      } else {
+        user = await prisma.user.create({
+          data: {
+            email,
+            appleId,
+            displayName: fullName ?? email.split('@')[0],
+          },
+          select: { id: true, email: true, displayName: true, avatarUrl: true, createdAt: true },
+        })
+      }
+    }
+
+    const accessToken = app.jwt.sign({ sub: user.id, email: user.email })
+    const refreshToken = app.jwt.sign({ sub: user.id, type: 'refresh' }, { expiresIn: '30d' })
+
+    const isNew = !existingByApple
+    return reply.code(isNew ? 201 : 200).send({
       data: { user, tokens: { accessToken, refreshToken, expiresIn: 900 } },
     })
   })

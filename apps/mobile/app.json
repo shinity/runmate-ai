@@ -21,7 +21,10 @@
         "NSHealthShareUsageDescription": "RunMate reads your health data to import workouts.",
         "NSHealthUpdateUsageDescription": "RunMate writes run data to Apple Health.",
         "NSPhotoLibraryAddUsageDescription": "RunMate saves route art images to your photo library.",
-        "NSPhotoLibraryUsageDescription": "RunMate accesses your photo library to save route art images."
+        "NSPhotoLibraryUsageDescription": "RunMate accesses your photo library to save route art images.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
@@ -51,7 +54,9 @@
           "icon": "./assets/notification-icon.png",
           "color": "#3b82f6"
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true

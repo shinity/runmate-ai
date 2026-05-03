@@ -11,6 +11,12 @@ export const GoogleAuthSchema = z.object({
   idToken: z.string().min(1),
 })
 
+export const AppleAuthSchema = z.object({
+  identityToken: z.string().min(1),
+  user: z.string().optional(),
+  fullName: z.object({ givenName: z.string().nullable().optional(), familyName: z.string().nullable().optional() }).nullable().optional(),
+})
+
 export const RegisterSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
@@ -128,6 +134,7 @@ export const CreateGroupSchema = z.object({
 export type LoginInput = z.infer<typeof LoginSchema>
 export type RegisterInput = z.infer<typeof RegisterSchema>
 export type GoogleAuthInput = z.infer<typeof GoogleAuthSchema>
+export type AppleAuthInput = z.infer<typeof AppleAuthSchema>
 export type UpdateUserInput = z.infer<typeof UpdateUserSchema>
 export type CreateRunInput = z.infer<typeof CreateRunSchema>
 export type GeneratePlanInput = z.infer<typeof GeneratePlanSchema>

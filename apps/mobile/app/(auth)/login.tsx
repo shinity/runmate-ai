@@ -6,6 +6,7 @@ import {
 import { Link } from 'expo-router'
 import { useAuthStore } from '../../stores/auth'
 import { useGoogleAuth } from '../../hooks/useGoogleAuth'
+import { useAppleAuth } from '../../hooks/useAppleAuth'
 import { useToast } from '../../components/Toast'
 import { getErrorMessage } from '../../lib/feedback'
 
@@ -14,6 +15,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('')
   const { login, isLoading } = useAuthStore()
   const { promptAsync, request } = useGoogleAuth()
+  const { signIn: appleSignIn, available: appleAvailable } = useAppleAuth()
   const { showToast } = useToast()
 
   async function handleLogin() {
@@ -91,6 +93,22 @@ export default function LoginScreen() {
           <Text style={styles.googleButtonText}>Google로 계속하기</Text>
         </TouchableOpacity>
 
+        {/* Apple 로그인 */}
+        {appleAvailable && (
+          <TouchableOpacity
+            style={styles.appleButton}
+            onPress={async () => {
+              try {
+                await appleSignIn()
+              } catch (e: any) {
+                showToast('error', getErrorMessage(e))
+              }
+            }}
+          >
+            <Text style={styles.appleButtonText}>Apple로 계속하기</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.footer}>
           <Text style={styles.footerText}>계정이 없으신가요? </Text>
           <Link href="/(auth)/register" asChild>
@@ -153,6 +171,14 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   googleButtonText: { color: '#111827', fontWeight: '700', fontSize: 16 },
+  appleButton: {
+    backgroundColor: '#000000',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  appleButtonText: { color: '#ffffff', fontWeight: '700', fontSize: 16 },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: 24 },
   footerText: { color: '#64748b', fontSize: 14 },
   footerLink: { color: '#3b82f6', fontWeight: '700', fontSize: 14 },

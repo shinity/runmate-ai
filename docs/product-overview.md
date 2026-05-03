@@ -2,23 +2,25 @@
 
 ## 서비스 개요
 
-**RunMate AI**는 러너의 습관·기록·루틴을 AI가 분석해 개인 맞춤 코칭을 제공하고, 비슷한 러너를 연결해주는 모바일 앱입니다.
+**RunMate AI**는 러너의 습관·기록·루틴을 AI가 분석해 개인 맞춤 코칭을 제공하고, GPS 경로를 아트로 변환하는 모바일 앱입니다.
 
-> "혼자 달리지 않아도 됩니다. AI 코치와 함께, 나와 닮은 러너와 함께."
+> "달릴 때마다 당신만의 아트가 만들어집니다. AI 코치와 함께, 더 스마트하게."
 
 ---
 
 ## 핵심 기능
 
-| 기능 | 설명 |
-|------|------|
-| **AI 코칭** | 런 완료 후 Claude가 페이스·심박수·훈련 부하를 분석해 코칭 인사이트 자동 생성 |
-| **훈련 계획** | 목표(5k/마라톤 등)와 현재 수준을 입력하면 AI가 주차별 맞춤 훈련 계획 생성 |
-| **회복 관리** | 최근 훈련 부하를 기반으로 오늘의 회복 점수와 권장 강도 제공 |
-| **러너 매칭** | 페이스·스타일·일정이 비슷한 러너 추천 및 1:1 매칭 |
-| **그룹 런** | 지역·목표 기반 러닝 그룹 생성 및 참여 |
-| **웨어러블 연동** | Apple Watch, Garmin, Galaxy Watch 등 6개 기기 지원 |
-| **라우트 아트** | GPS 경로를 AI 이미지로 변환 (Phase 3) |
+| 기능 | 설명 | 상태 |
+|------|------|------|
+| **러닝 기록** | GPS 실시간 추적, 페이스/거리/심박수 기록 | ✅ 완료 |
+| **AI 코칭** | 런 완료 후 Claude가 자동으로 코칭 인사이트 생성 | ✅ 완료 |
+| **훈련 계획** | 목표와 현재 수준 입력 → AI가 주차별 맞춤 계획 생성 | ✅ 완료 |
+| **회복 관리** | 훈련 부하 기반 오늘의 컨디션 & 권장 강도 제공 | ✅ 완료 |
+| **Route Art** | GPS 경로 → SVG 아트 자동 생성, 갤러리 관리 | ✅ 완료 |
+| **Animated Route Art** | SVG 경로 + 배경/캐릭터 프리셋 → GIF 애니메이션 생성 | ✅ 완료 |
+| **러닝메이트 매칭** | 페이스·스타일·일정이 비슷한 러너 추천 및 1:1 매칭 | 🚧 준비 중 |
+| **채팅** | 매칭된 러너와 실시간 채팅 (WebSocket) | ✅ 완료 |
+| **웨어러블 연동** | Apple HealthKit / Health Connect 동기화 | ✅ 완료 |
 
 ---
 
@@ -26,9 +28,9 @@
 
 | 세그먼트 | 특징 |
 |----------|------|
-| 입문 러너 | 처음 달리기 시작, 코칭이 필요하지만 PT 비용 부담 |
+| 입문 러너 | 처음 달리기 시작, AI 코칭이 필요하지만 PT 비용 부담 |
 | 중급 러너 | 기록 향상을 원하지만 혼자 계획 수립이 어려움 |
-| 함께 달리고 싶은 러너 | 러닝 메이트를 찾기 어려운 상황 |
+| 아트 러버 | GPS 경로를 감성적인 아트로 남기고 싶은 러너 |
 
 ---
 
@@ -36,35 +38,42 @@
 
 | 레이어 | 기술 |
 |--------|------|
-| 모바일 | Expo SDK 52 + React Native + Expo Router |
+| 모바일 | Expo SDK 54 + React Native 0.81 + Expo Router |
 | 백엔드 | Fastify v5 + TypeScript + Prisma |
-| 데이터베이스 | PostgreSQL (TimescaleDB) |
+| 데이터베이스 | PostgreSQL 16 |
 | 캐시/큐 | Redis + BullMQ |
-| AI | Claude API (claude-sonnet-4-5) |
-| 임베딩 | OpenAI text-embedding-3-small + Pinecone (Phase 2) |
-| 이미지 생성 | Replicate SDXL (Phase 3) |
-| 인프라 | Docker Compose (로컬), 확장 예정 |
+| AI | Claude API (claude-sonnet-4-6) |
+| 이미지 처리 | Sharp (GIF 프레임 합성) |
+| 벡터 검색 | Pinecone (선택적, DB 폴백 지원) |
+| 이메일 | Resend (OTP 발송) |
+| 인프라 | Docker Compose + Nginx + Synology NAS |
+| CI/CD | GitHub Actions → GHCR → NAS 자동 배포 |
+| 모바일 빌드 | EAS Build (Android APK) |
 
 ---
 
 ## 개발 단계
 
-### MVP (현재)
-- 런 기록 + AI 코칭 인사이트 (Claude API 직접 호출)
+### ✅ MVP (완료)
+- 런 기록 + GPS 추적
+- AI 코칭 인사이트 (Claude API)
 - AI 훈련 계획 생성
-- 페이스 기반 러너 매칭 (DB 쿼리)
-- 웨어러블 기기 연동 구조
+- Route Art (GPS → SVG)
+- Animated Route Art (SVG + 배경/캐릭터 → GIF)
+- Google OAuth (Android)
+- 이메일 OTP 비밀번호 재설정
+- 웨어러블 연동 구조
+- EAS Android APK 빌드
 
-### Phase 2
-- Python AI 파이프라인 분리 (`services/ai-pipeline`)
-- OpenAI 임베딩 + Pinecone 벡터 매칭
-- GPS 스트림 데이터 (TimescaleDB 하이퍼테이블)
-- 푸시 알림 (Expo Push)
+### 🚧 진행 중
+- 러닝메이트 매칭 (UI 준비 중, API 완료)
+- Animated Route Art 배경 이미지 실사 생성 (FLUX.1 연동 예정)
 
-### Phase 3
-- 라우트 아트 생성 (Replicate SDXL)
+### 📋 예정
+- iOS 프로덕션 빌드 (Apple Developer Program 필요)
 - 소셜 피드 (공개 런 공유)
 - 러닝 챌린지
+- 푸시 알림
 
 ---
 
@@ -73,5 +82,5 @@
 | 모델 | 내용 |
 |------|------|
 | Freemium | 무료: 기본 기록 + 주 3회 AI 인사이트 |
-| Pro 구독 | 무제한 AI 코칭 + 훈련 계획 + 라우트 아트 |
+| Pro 구독 | 무제한 AI 코칭 + 훈련 계획 + Animated Route Art |
 | 그룹 플랜 | 팀/클럽 단위 구독 |
