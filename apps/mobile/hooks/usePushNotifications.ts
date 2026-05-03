@@ -59,7 +59,7 @@ export function usePushNotifications(): PushNotificationState {
           pushToken: expoPushToken,
         })
       } catch (err) {
-        console.error('[Push] Failed to register push token:', err)
+        console.warn('[Push] Failed to register push token:', err)
       }
     }
 

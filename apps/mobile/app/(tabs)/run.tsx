@@ -12,6 +12,60 @@ import RunDetailModal from '../../components/RunDetailModal'
 import { useToast } from '../../components/Toast'
 import { getErrorMessage, SUCCESS_MESSAGES } from '../../lib/feedback'
 
+// 오산천 더미 GPS 데이터 생성 (오산시 오산천 부근 37.150N, 127.069E)
+function generateCircularRoute() {
+  // 중심: 37.150, 127.069 / 반지름: ~500m / 30포인트 / 총 ~3.14km
+  const centerLat = 37.150
+  const centerLng = 127.069
+  const radiusLat = 500 / 111000
+  const radiusLng = 500 / (111000 * Math.cos(centerLat * Math.PI / 180))
+  const numPoints = 30
+  const now = new Date()
+  const startTime = new Date(now.getTime() - 20 * 60 * 1000) // 20분 전 시작
+  const paceSecPerKm = 330
+
+  return Array.from({ length: numPoints }, (_, i) => {
+    const angle = (2 * Math.PI * i) / numPoints
+    const timestamp = new Date(startTime.getTime() + i * 40 * 1000).toISOString()
+    return {
+      lat: centerLat + radiusLat * Math.cos(angle),
+      lng: centerLng + radiusLng * Math.sin(angle),
+      altitudeM: 22 + Math.sin(angle) * 3,
+      timestamp,
+      paceSecPerKm,
+      heartRate: null,
+      cadenceSpm: null,
+      powerWatts: null,
+    }
+  })
+}
+
+function generateLinearRoute() {
+  // 오산천 남북 직선 코스: 37.138~37.183 (약 5km)
+  const startLat = 37.138
+  const lng = 127.070
+  const numPoints = 50
+  const totalDistanceM = 5000
+  const now = new Date()
+  const startTime = new Date(now.getTime() - 28 * 60 * 1000) // 28분 전 시작
+  const paceSecPerKm = 330
+
+  return Array.from({ length: numPoints }, (_, i) => {
+    const t = i / (numPoints - 1)
+    const timestamp = new Date(startTime.getTime() + i * 33 * 1000).toISOString()
+    return {
+      lat: startLat + (totalDistanceM / 111000) * t,
+      lng: lng + (Math.random() * 0.0004 - 0.0002), // 약간의 좌우 흔들림
+      altitudeM: 20 + t * 5,
+      timestamp,
+      paceSecPerKm: 320 + Math.floor(Math.random() * 40),
+      heartRate: null,
+      cadenceSpm: null,
+      powerWatts: null,
+    }
+  })
+}
+
 interface RunSummary {
   startedAt: string
   endedAt: string
@@ -123,6 +177,32 @@ export default function RunScreen() {
       setTab('history')
     } catch (e: any) {
       console.error('[RunSave] error:', JSON.stringify(e))
+      showToast('error', getErrorMessage(e))
+    }
+  }
+
+  async function insertDummyRun(type: 'circular' | 'linear') {
+    const datapoints = type === 'circular' ? generateCircularRoute() : generateLinearRoute()
+    const distanceMeters = type === 'circular' ? 3140 : 5000
+    const durationSeconds = type === 'circular' ? 20 * 60 : 28 * 60
+    const now = new Date()
+    const startedAt = new Date(now.getTime() - durationSeconds * 1000).toISOString()
+
+    try {
+      await createRun.mutateAsync({
+        startedAt,
+        endedAt: now.toISOString(),
+        durationSeconds,
+        distanceMeters,
+        elevationGainMeters: type === 'circular' ? 10 : 25,
+        elevationLossMeters: type === 'circular' ? 10 : 5,
+        avgPaceSecPerKm: Math.round(durationSeconds / (distanceMeters / 1000)),
+        effortScore: 5,
+        dataSource: 'app_native',
+        datapoints,
+      })
+      showToast('success', '더미 데이터가 삽입되었습니다.')
+    } catch (e: any) {
       showToast('error', getErrorMessage(e))
     }
   }
@@ -260,6 +340,29 @@ export default function RunScreen() {
           data={runs ?? []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.dummySection}>
+              <Text style={styles.dummySectionTitle}>테스트 데이터</Text>
+              <View style={styles.dummyButtons}>
+                <TouchableOpacity
+                  style={[styles.dummyBtn, createRun.isPending && styles.btnDisabledOpacity]}
+                  onPress={() => insertDummyRun('circular')}
+                  disabled={createRun.isPending}
+                >
+                  <Text style={styles.dummyBtnText}>순환 코스 삽입</Text>
+                  <Text style={styles.dummyBtnSub}>오산천 ~3km</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.dummyBtn, createRun.isPending && styles.btnDisabledOpacity]}
+                  onPress={() => insertDummyRun('linear')}
+                  disabled={createRun.isPending}
+                >
+                  <Text style={styles.dummyBtnText}>직선 코스 삽입</Text>
+                  <Text style={styles.dummyBtnSub}>오산천 ~5km</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="walk" size={64} color="#334155" />
@@ -358,4 +461,10 @@ const styles = StyleSheet.create({
   discardBtn: { padding: 12, alignItems: 'center' },
   discardBtnText: { color: '#475569', fontSize: 14 },
   btnDisabledOpacity: { opacity: 0.6 },
+  dummySection: { paddingHorizontal: 0, paddingTop: 4, paddingBottom: 8 },
+  dummySectionTitle: { color: '#475569', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  dummyButtons: { flexDirection: 'row', gap: 8 },
+  dummyBtn: { flex: 1, backgroundColor: '#1e293b', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
+  dummyBtnText: { color: '#94a3b8', fontSize: 13, fontWeight: '600' },
+  dummyBtnSub: { color: '#475569', fontSize: 11, marginTop: 2 },
 })

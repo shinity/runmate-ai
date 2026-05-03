@@ -8,17 +8,22 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1"
+        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "346321916271-acr4dhk904bd0urdur1552q1hpqgrs2g.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "346321916271-0a2qo6hnkv21d5kr7h7bgga2nnnd0dqh.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "346321916271-m31dr46t8vglc4tjbn4g2d33aa0bf1j0.apps.googleusercontent.com"
       }
     },
     "preview": {
-      "config": "preview.yml",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1"
+        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "346321916271-acr4dhk904bd0urdur1552q1hpqgrs2g.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "346321916271-0a2qo6hnkv21d5kr7h7bgga2nnnd0dqh.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "346321916271-m31dr46t8vglc4tjbn4g2d33aa0bf1j0.apps.googleusercontent.com"
       }
     },
     "production": {
@@ -26,7 +31,10 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://diho-box.synology.me:4000/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://diho-box.synology.me:4000/api/v1",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "346321916271-acr4dhk904bd0urdur1552q1hpqgrs2g.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "346321916271-0a2qo6hnkv21d5kr7h7bgga2nnnd0dqh.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "346321916271-m31dr46t8vglc4tjbn4g2d33aa0bf1j0.apps.googleusercontent.com"
       }
     }
   },
