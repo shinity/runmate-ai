@@ -1,11 +1,25 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const FROM = process.env.EMAIL_FROM ?? 'RunMate <onboarding@resend.dev>'
+function createTransporter() {
+  const user = process.env.GMAIL_USER
+  const pass = process.env.GMAIL_APP_PASSWORD
+
+  if (!user || !pass) {
+    throw new Error('GMAIL_USER and GMAIL_APP_PASSWORD must be set')
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user, pass },
+  })
+}
 
 export async function sendPasswordResetEmail(to: string, code: string): Promise<void> {
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  await resend.emails.send({
-    from: FROM,
+  const transporter = createTransporter()
+  const from = process.env.GMAIL_USER
+
+  await transporter.sendMail({
+    from: `RunMate <${from}>`,
     to,
     subject: '[RunMate] 비밀번호 재설정 코드',
     html: `

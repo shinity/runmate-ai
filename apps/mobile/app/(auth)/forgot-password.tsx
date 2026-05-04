@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  KeyboardAvoidingView, Platform, ActivityIndicator,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -23,18 +23,9 @@ export default function ForgotPasswordScreen() {
 
     setIsLoading(true)
     try {
-      const { data } = await api.post<{ code: string }>('/auth/forgot-password', { email: email.trim() })
+      await api.post('/auth/forgot-password', { email: email.trim() })
       showToast('success', SUCCESS_MESSAGES.PASSWORD_RESET_SENT)
-      Alert.alert(
-        '인증 코드 발송',
-        `인증 코드: ${data.code}\n이 코드를 다음 화면에 입력하세요`,
-        [
-          {
-            text: '확인',
-            onPress: () => router.push(`/(auth)/reset-password?email=${encodeURIComponent(email.trim())}`),
-          },
-        ],
-      )
+      router.push(`/(auth)/reset-password?email=${encodeURIComponent(email.trim())}`)
     } catch (e: any) {
       showToast('error', getErrorMessage(e))
     } finally {
