@@ -228,7 +228,7 @@ export async function authRoutes(app: FastifyInstance) {
     })
   })
 
-  app.post('/logout', { onRequest: [app.authenticate] }, async (_request, reply) => {
+  app.post('/logout', { preHandler: [app.authenticate] }, async (_request, reply) => {
     return reply.send({ data: { message: '로그아웃되었습니다' } })
   })
 
