@@ -24,7 +24,14 @@
         "NSPhotoLibraryUsageDescription": "RunMate accesses your photo library to save route art images.",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.346321916271-acr4dhk904bd0urdur1552q1hpqgrs2g"
+            ]
+          }
+        ]
       }
     },
     "android": {
