@@ -58,6 +58,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   logout: async () => {
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // 토큰 만료 등 실패해도 로컬 상태는 초기화
+    }
     await clearTokens()
     set({ user: null, isAuthenticated: false })
   },

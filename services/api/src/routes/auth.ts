@@ -228,6 +228,10 @@ export async function authRoutes(app: FastifyInstance) {
     })
   })
 
+  app.post('/logout', { onRequest: [app.authenticate] }, async (_request, reply) => {
+    return reply.send({ data: { message: '로그아웃되었습니다' } })
+  })
+
   app.post('/reset-password', async (request, reply) => {
     const body = z
       .object({
