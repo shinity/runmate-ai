@@ -193,6 +193,9 @@ jobs:
             # 배포
             docker compose -f docker-compose.prod.yml up -d --no-deps api nginx
 
+            # nginx DNS 캐시 갱신 (API 컨테이너 재생성 시 IP 변경 대응)
+            docker restart runmate-ai-nginx-1 || true
+
             # 헬스체크 — nginx 대신 API 컨테이너 직접 체크 (60초, 5초 간격 12회)
             echo "Waiting for health check..."
             sleep 10
