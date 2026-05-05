@@ -1,0 +1,71 @@
+name: Claude CI Debugger
+
+on:
+  workflow_run:
+    workflows: ["CI/CD Pipeline"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude-debug:
+    if: github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Get failed job info
+        id: job-info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{ github.event.workflow_run.id }}
+            })
+            const failed = jobs.data.jobs.filter(j => j.conclusion === 'failure')
+            const names = failed.map(j => j.name).join(', ')
+            const steps = failed.flatMap(j =>
+              j.steps.filter(s => s.conclusion === 'failure').map(s => `${j.name} > ${s.name}`)
+            ).join('\n')
+            core.setOutput('failed_jobs', names)
+            core.setOutput('failed_steps', steps)
+
+      - uses: anthropic/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            CI/CD 파이프라인이 실패했습니다. 원인을 분석하고 수정 PR을 만들어주세요.
+
+            실패 정보:
+            - 워크플로우 URL: ${{ github.event.workflow_run.html_url }}
+            - 실패 Job: ${{ steps.job-info.outputs.failed_jobs }}
+            - 실패 Step: ${{ steps.job-info.outputs.failed_steps }}
+            - 커밋 SHA: ${{ github.event.workflow_run.head_sha }}
+            - 브랜치: ${{ github.event.workflow_run.head_branch }}
+
+            ## RunMate AI 프로젝트
+
+            - 테스트: `cd services/api && npm test` (Vitest)
+            - 타입체크: `npm run type-check` (turbo 전체)
+            - 빌드: `npm run build` (turbo 전체)
+            - 모바일 타입체크: `cd apps/mobile && npm run type-check`
+
+            ## 작업 순서
+
+            1. 실패한 파일과 오류 메시지 파악
+            2. 코드 수정 (타입 오류, 테스트 실패, 빌드 오류 등)
+            3. 로컬에서 검증: `npm run type-check` 또는 관련 테스트
+            4. 새 브랜치 생성: `fix/ci-<실패원인-요약>`
+            5. 수정 사항 커밋 및 PR 생성
+
+            PR 제목 형식: `fix: CI 자동 수정 - [실패 원인 한 줄 요약]`
+            PR 본문에 실패 원인과 수정 내용 설명 포함.

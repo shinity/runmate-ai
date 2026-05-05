@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "postinstall": "npm run build --workspace=packages/types && npm run build --workspace=packages/validators",
+    "prepare": "husky",
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "eslint . --max-warnings=0",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "husky": "^9.1.7",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
     "eslint": "^9.17.0",

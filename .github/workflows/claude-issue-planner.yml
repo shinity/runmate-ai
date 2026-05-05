@@ -1,0 +1,69 @@
+name: Claude Issue Planner
+
+on:
+  issues:
+    types: [opened]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  claude-plan:
+    # 새 이슈 열릴 때 OR 코멘트에 @claude plan 포함 시
+    if: |
+      (github.event_name == 'issues' && github.event.action == 'opened') ||
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude plan'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: anthropic/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            이 GitHub 이슈를 분석하고 구현 플랜을 이슈 코멘트로 작성해주세요.
+
+            이슈 제목: ${{ github.event.issue.title }}
+            이슈 내용: ${{ github.event.issue.body }}
+
+            ## RunMate AI 프로젝트 컨텍스트
+
+            Turborepo 모노레포:
+            - `services/api/` — Fastify v5 + Prisma + PostgreSQL + BullMQ
+            - `apps/mobile/` — Expo SDK 54 + React Native + TanStack Query
+            - `packages/types/` — 공유 TypeScript 타입
+            - `packages/validators/` — Zod 스키마
+
+            주요 도메인: Auth, Runs, Coaching (AI), Matching, Messages, Sync, Users, WebSocket
+
+            ## 플랜 출력 형식
+
+            다음 형식으로 이슈에 코멘트를 달아주세요:
+
+            ---
+            ## 🤖 Claude 구현 플랜
+
+            **복잡도**: S (1-2h) / M (반나절) / L (1일+)
+
+            **영향 파일**:
+            - [ ] `파일경로`: 변경 내용 요약
+
+            **구현 단계**:
+            1. 스키마/타입 변경 (필요 시)
+            2. API 엔드포인트 구현
+            3. 모바일 화면 구현
+            4. 테스트 작성
+
+            **테스트 케이스**:
+            - [ ] 성공 케이스
+            - [ ] 실패/엣지 케이스
+
+            **주의사항**: (있을 경우)
+            ---
