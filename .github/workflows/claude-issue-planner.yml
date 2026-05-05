@@ -72,12 +72,13 @@ jobs:
 
       - name: Post plan as comment
         uses: actions/github-script@v7
+        env:
+          PLAN: ${{ steps.plan.outputs.plan }}
         with:
           script: |
-            const plan = `${{ steps.plan.outputs.plan }}`
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body: plan
+              body: process.env.PLAN
             })
