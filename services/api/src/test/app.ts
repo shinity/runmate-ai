@@ -5,6 +5,7 @@ import { userRoutes } from '../routes/users'
 import { runRoutes } from '../routes/runs'
 import { coachingRoutes } from '../routes/coaching'
 import { matchRoutes } from '../routes/matching'
+import { messageRoutes } from '../routes/messages'
 import { syncRoutes } from '../routes/sync'
 
 export async function buildApp(): Promise<FastifyInstance> {
@@ -37,6 +38,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(runRoutes, { prefix: '/api/v1/runs' })
   await app.register(coachingRoutes, { prefix: '/api/v1/coaching' })
   await app.register(matchRoutes, { prefix: '/api/v1/match' })
+  await app.register(messageRoutes, { prefix: '/api/v1/messages' })
   await app.register(syncRoutes, { prefix: '/api/v1/sync' })
 
   app.get('/health', async () => ({ status: 'ok' }))

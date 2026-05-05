@@ -73,8 +73,19 @@ vi.mock('../lib/prisma', () => ({
       update: vi.fn(),
       updateMany: vi.fn(),
     },
+    message: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      updateMany: vi.fn(),
+    },
     $transaction: vi.fn().mockImplementation((ops: any[]) => Promise.all(ops)),
   },
+}))
+
+// WebSocket mock
+vi.mock('../lib/websocket', () => ({
+  sendToUser: vi.fn(),
+  wsConnections: new Map(),
 }))
 
 // BullMQ 큐 mock
