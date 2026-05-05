@@ -31,41 +31,78 @@ jobs:
               run_id: ${{ github.event.workflow_run.id }}
             })
             const failed = jobs.data.jobs.filter(j => j.conclusion === 'failure')
-            const names = failed.map(j => j.name).join(', ')
-            const steps = failed.flatMap(j =>
-              j.steps.filter(s => s.conclusion === 'failure').map(s => `${j.name} > ${s.name}`)
-            ).join('\n')
-            core.setOutput('failed_jobs', names)
-            core.setOutput('failed_steps', steps)
+            const summary = failed.map(j => {
+              const failedSteps = j.steps.filter(s => s.conclusion === 'failure').map(s => s.name)
+              return `Job: ${j.name}, Steps: ${failedSteps.join(', ')}`
+            }).join('\n')
+            core.setOutput('summary', summary)
+            core.setOutput('run_url', '${{ github.event.workflow_run.html_url }}')
 
-      - uses: anthropic/claude-code-action@beta
+      - name: Ask Claude for fix
+        id: claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FAILED_SUMMARY: ${{ steps.job-info.outputs.summary }}
+          RUN_URL: ${{ steps.job-info.outputs.run_url }}
+        run: |
+          PROMPT="RunMate AI CI/CD 파이프라인이 실패했습니다.
+
+          실패 정보:
+          ${FAILED_SUMMARY}
+          워크플로우 URL: ${RUN_URL}
+
+          프로젝트: Turborepo 모노레포 (services/api: Fastify+Prisma, apps/mobile: Expo)
+          테스트: Vitest (services/api/), Jest (apps/mobile/)
+          타입체크: npm run type-check (turbo)
+
+          실패 원인을 분석하고 어떤 파일을 어떻게 수정해야 하는지 구체적으로 설명해주세요.
+          수정할 코드 스니펫도 포함해주세요."
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "x-api-key: ${ANTHROPIC_API_KEY}" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d "{
+              \"model\": \"claude-opus-4-7\",
+              \"max_tokens\": 2048,
+              \"messages\": [{\"role\": \"user\", \"content\": $(echo "$PROMPT" | jq -Rs .)}]
+            }")
+
+          ANALYSIS=$(echo "$RESPONSE" | jq -r '.content[0].text')
+          echo "analysis<<EOF" >> $GITHUB_OUTPUT
+          echo "$ANALYSIS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create debug issue comment
+        uses: actions/github-script@v7
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          prompt: |
-            CI/CD 파이프라인이 실패했습니다. 원인을 분석하고 수정 PR을 만들어주세요.
+          script: |
+            const analysis = `${{ steps.claude.outputs.analysis }}`
+            const runUrl = `${{ steps.job-info.outputs.run_url }}`
 
-            실패 정보:
-            - 워크플로우 URL: ${{ github.event.workflow_run.html_url }}
-            - 실패 Job: ${{ steps.job-info.outputs.failed_jobs }}
-            - 실패 Step: ${{ steps.job-info.outputs.failed_steps }}
-            - 커밋 SHA: ${{ github.event.workflow_run.head_sha }}
-            - 브랜치: ${{ github.event.workflow_run.head_branch }}
+            // 기존 열린 이슈가 있으면 코멘트, 없으면 새 이슈 생성
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'ci-failure',
+              state: 'open'
+            })
 
-            ## RunMate AI 프로젝트
+            const body = `## 🔴 CI 실패 자동 분석\n\n**워크플로우**: ${runUrl}\n\n${analysis}`
 
-            - 테스트: `cd services/api && npm test` (Vitest)
-            - 타입체크: `npm run type-check` (turbo 전체)
-            - 빌드: `npm run build` (turbo 전체)
-            - 모바일 타입체크: `cd apps/mobile && npm run type-check`
-
-            ## 작업 순서
-
-            1. 실패한 파일과 오류 메시지 파악
-            2. 코드 수정 (타입 오류, 테스트 실패, 빌드 오류 등)
-            3. 로컬에서 검증: `npm run type-check` 또는 관련 테스트
-            4. 새 브랜치 생성: `fix/ci-<실패원인-요약>`
-            5. 수정 사항 커밋 및 PR 생성
-
-            PR 제목 형식: `fix: CI 자동 수정 - [실패 원인 한 줄 요약]`
-            PR 본문에 실패 원인과 수정 내용 설명 포함.
+            if (issues.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues.data[0].number,
+                body
+              })
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🔴 CI 실패 - Claude 자동 분석',
+                body,
+                labels: ['ci-failure', 'bug']
+              })
+            }
