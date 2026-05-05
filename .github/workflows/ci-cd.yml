@@ -179,6 +179,17 @@ jobs:
             # 새 이미지 pull
             docker compose -f docker-compose.prod.yml pull api
 
+            # DB/Redis가 꺼져 있으면 시작 (이미 실행 중이면 no-op)
+            docker compose -f docker-compose.prod.yml up -d postgres redis
+
+            # postgres 헬스체크 대기 (최대 30초)
+            for i in $(seq 1 6); do
+              sleep 5
+              PG_STATUS=$(docker inspect --format='{{.State.Health.Status}}' runmate-ai-postgres-1 2>/dev/null || echo "unknown")
+              echo "postgres health=$PG_STATUS"
+              if [ "$PG_STATUS" = "healthy" ]; then break; fi
+            done
+
             # 배포
             docker compose -f docker-compose.prod.yml up -d --no-deps api nginx
 
