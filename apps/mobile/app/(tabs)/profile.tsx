@@ -200,28 +200,23 @@ export default function ProfileScreen() {
       {/* Settings */}
       <Text style={styles.sectionTitle}>설정</Text>
       <View style={styles.card}>
-        <TouchableOpacity style={styles.settingRow} onPress={() => Alert.alert('준비 중', '프로필 수정 기능은 곧 출시됩니다.')}>
+        <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/profile-edit')}>
           <Text style={styles.settingLabel}>프로필 수정</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => Alert.alert('준비 중', '기기 연결 기능은 곧 출시됩니다.')}>
+        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => router.push('/devices')}>
           <Text style={styles.settingLabel}>연결된 기기</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => Alert.alert('준비 중', '매칭 설정 기능은 곧 출시됩니다.')}>
+        <TouchableOpacity style={[styles.settingRow, styles.settingRowBorder]} onPress={() => router.push('/match-settings')}>
           <Text style={styles.settingLabel}>매칭 설정</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.settingRow, styles.settingRowBorder]}
-          onPress={() => Alert.alert('준비 중', '러닝메이트 매칭 기능은 곧 출시됩니다.')}
+          onPress={() => router.push('/(tabs)/match')}
         >
-          <View style={styles.settingLabelRow}>
-            <Text style={styles.settingLabel}>러닝메이트 매칭</Text>
-            <View style={styles.comingSoonBadge}>
-              <Text style={styles.comingSoonText}>준비 중</Text>
-            </View>
-          </View>
+          <Text style={styles.settingLabel}>러닝메이트 매칭</Text>
           <Text style={styles.settingArrow}>›</Text>
         </TouchableOpacity>
         <TouchableOpacity

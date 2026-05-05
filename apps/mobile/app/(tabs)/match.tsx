@@ -148,8 +148,8 @@ function ActiveMatchesTab() {
                 <Text style={[styles.cardSub, { color: '#4ade80' }]}>✓ 매칭 완료</Text>
               </View>
               <TouchableOpacity
-                style={[styles.chatBtn, { opacity: 0.4 }]}
-                onPress={() => Alert.alert('준비 중', '채팅 기능은 곧 출시됩니다.')}
+                style={styles.chatBtn}
+                onPress={() => router.push(`/chat/${m.id}`)}
               >
                 <Text style={styles.chatBtnText}>채팅</Text>
               </TouchableOpacity>
