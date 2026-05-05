@@ -30,4 +30,6 @@ await waitFor(() => expect(result.current.isSuccess).toBe(true))
 
 ## 공통 원칙
 - 구현 → **테스트** → 문서화 순서 준수 (테스트 없이 완료로 판단 금지)
-- DB mock 사용 금지 — 실제 DB 또는 완전한 통합 환경 사용
+- **로컬 단위 테스트**: DB mock 허용 (`setup.ts`의 prisma mock 패턴 사용)
+- **CI/CD 통합 테스트**: 실제 DB/Redis 컨테이너 사용 — mock 금지
+- 개발 환경과 배포 환경은 분리: 로컬은 빠른 반복, NAS 배포는 실제 인프라 기준

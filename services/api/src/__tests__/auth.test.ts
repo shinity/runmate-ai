@@ -362,4 +362,40 @@ describe('Auth Routes', () => {
       expect(res.statusCode).toBe(400)
     })
   })
+
+  // ─── POST /api/v1/auth/logout ─────────────────────────────────────────────
+
+  describe('POST /api/v1/auth/logout', () => {
+    it('유효한 토큰으로 로그아웃하면 200을 반환한다', async () => {
+      const token = app.jwt.sign({ sub: 'user-1', email: 'test@test.com' })
+
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/logout',
+        headers: { authorization: `Bearer ${token}` },
+      })
+
+      expect(res.statusCode).toBe(200)
+      expect(res.json().data.message).toBe('로그아웃되었습니다')
+    })
+
+    it('토큰 없이 요청하면 401을 반환한다', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/logout',
+      })
+
+      expect(res.statusCode).toBe(401)
+    })
+
+    it('잘못된 토큰으로 요청하면 401을 반환한다', async () => {
+      const res = await app.inject({
+        method: 'POST',
+        url: '/api/v1/auth/logout',
+        headers: { authorization: 'Bearer invalid.token.here' },
+      })
+
+      expect(res.statusCode).toBe(401)
+    })
+  })
 })
